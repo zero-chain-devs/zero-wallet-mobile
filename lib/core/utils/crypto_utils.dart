@@ -28,7 +28,7 @@ class DerivedWalletData {
 class CryptoUtils {
   CryptoUtils._();
 
-  static const String nativeAddressPrefix = 'ZERO';
+  static const String nativeAddressPrefix = 'ZER0x';
 
   static final Cipher _cipher = AesGcm.with256bits();
   static final Pbkdf2 _pbkdf2 = Pbkdf2.hmacSha256(
@@ -228,6 +228,30 @@ class CryptoUtils {
     final digest = KeccakDigest(256).process(publicKeyBytes);
     final addressRaw = digest.sublist(digest.length - 20);
     return _formatNativeAddress(addressRaw);
+  }
+
+  static String normalizeNativeAddress(String address) {
+    final trimmed = address.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Native address is empty');
+    }
+
+    final body = trimmed.startsWith(nativeAddressPrefix)
+        ? trimmed.substring(nativeAddressPrefix.length)
+        : trimmed.startsWith('ZERO')
+        ? trimmed.substring(4)
+        : trimmed.startsWith('native1')
+        ? trimmed.substring(7)
+        : trimmed.startsWith('0x')
+        ? trimmed.substring(2)
+        : trimmed;
+
+    if (!RegExp(r'^[a-fA-F0-9]{40}$').hasMatch(body)) {
+      throw ArgumentError('Native address body must be 20-byte hex');
+    }
+
+    final bytes = Uint8List.fromList(hex.decode(body));
+    return _formatNativeAddress(bytes);
   }
 
   static String _formatNativeAddress(List<int> rawAddress) {

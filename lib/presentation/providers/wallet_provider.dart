@@ -789,6 +789,11 @@ class WalletProvider extends ChangeNotifier {
     }
 
     try {
+      final normalized = CryptoUtils.normalizeNativeAddress(account.address);
+      return account.copyWith(address: normalized);
+    } catch (_) {}
+
+    try {
       final normalized = CryptoUtils.formatNativeAddressFromPublicKey(
         account.publicKey,
       );
