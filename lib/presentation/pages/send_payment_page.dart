@@ -228,7 +228,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                                   ),
                                   decoration: const InputDecoration(
                                     border: InputBorder.none,
-                                    hintText: '0x...',
+                                    hintText: '0x... / ZER0x...',
                                     hintStyle: TextStyle(color: Colors.white24),
                                   ),
                                   validator: (value) {
@@ -237,17 +237,21 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                                     if (address.isEmpty) {
                                       return '请输入目标地址';
                                     }
-                                    if (!RegExp(
+                                    final isEvm = RegExp(
                                       r'^0x[a-fA-F0-9]{40}$',
-                                    ).hasMatch(address)) {
-                                      return 'EVM 地址无效';
+                                    ).hasMatch(address);
+                                    final isNativeAlias = RegExp(
+                                      r'^(ZER0x|ZERO|native1)[a-fA-F0-9]{40}$',
+                                    ).hasMatch(address);
+                                    if (!isEvm && !isNativeAlias) {
+                                      return '地址无效，仅支持 0x... 或 ZER0x...';
                                     }
                                     return null;
                                   },
                                 ),
                           trailingLabel: isNative
                               ? '下方密码用于签名 simulate / submit'
-                              : '输入目标地址，data 为可选项',
+                              : '发送前将校验地址类型与当前网络',
                         ),
                       ],
                     ),
@@ -440,14 +444,37 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
     }
 
     final provider = context.read<WalletProvider>();
-    final result = await provider.sendPayment(
-      toAddress: _toController.text.trim(),
+    final initialTo = _toController.text.trim();
+    var result = await provider.sendPayment(
+      toAddress: initialTo,
       amountText: _amountController.text.trim(),
       password: _passwordController.text,
     );
 
     if (!mounted) {
       return;
+    }
+
+    if (result.requiresMixedFormatConfirmation) {
+      final normalized = result.normalizedToAddress ?? initialTo;
+      final confirmed = await _confirmMixedAddressSend(
+        rawAddress: initialTo,
+        normalizedAddress: normalized,
+        networkName: provider.currentNetwork.name,
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      result = await provider.sendPayment(
+        toAddress: initialTo,
+        amountText: _amountController.text.trim(),
+        password: _passwordController.text,
+        mixedFormatConfirmed: true,
+      );
+      if (!mounted) {
+        return;
+      }
     }
 
     if (!result.success) {
@@ -527,6 +554,39 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
         );
       },
     );
+  }
+
+  Future<bool> _confirmMixedAddressSend({
+    required String rawAddress,
+    required String normalizedAddress,
+    required String networkName,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('确认地址格式混用'),
+          content: Text(
+            '检测到收款地址使用原生前缀，当前发送流程是 EVM(0x)。\n\n'
+            '网络: $networkName\n'
+            '原始输入: $rawAddress\n'
+            '发送目标: $normalizedAddress\n\n'
+            '请确认你理解此转换后再继续。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('确认继续'),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
   }
 
   Future<void> _simulateNative() async {

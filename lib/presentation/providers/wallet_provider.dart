@@ -355,6 +355,7 @@ class WalletProvider extends ChangeNotifier {
     required String toAddress,
     required String amountText,
     required String password,
+    bool mixedFormatConfirmed = false,
   }) async {
     if (_currentAccount == null) {
       return SendPaymentResult(success: false, error: 'No active account');
@@ -368,13 +369,22 @@ class WalletProvider extends ChangeNotifier {
       );
     }
 
-    if (!_isValidEvmAddress(toAddress)) {
+    final targetCheck = _checkEvmTransferTarget(
+      senderAddress: _currentAccount!.address,
+      recipientInput: toAddress,
+      mixedFormatConfirmed: mixedFormatConfirmed,
+    );
+    if (!targetCheck.valid) {
       return SendPaymentResult(
         success: false,
-        error: 'Invalid recipient address',
+        error: targetCheck.error ?? 'Invalid recipient address',
+        requiresMixedFormatConfirmation:
+            targetCheck.requiresMixedFormatConfirmation,
+        normalizedToAddress: targetCheck.normalizedRecipient,
       );
     }
 
+    final normalizedToAddress = targetCheck.normalizedRecipient ?? toAddress;
     final amountWei = _parseAmountToBaseUnit(
       amountText,
       _currentNetwork.decimals,
@@ -401,19 +411,29 @@ class WalletProvider extends ChangeNotifier {
       }
 
       _rpcClient ??= ZeroChainRpcClient(network: _currentNetwork.toConfig());
+      final chainId = await _rpcClient!.getChainId();
+      if (chainId != _currentNetwork.chainId) {
+        return SendPaymentResult(
+          success: false,
+          error:
+              'Network mismatch: selected ${_currentNetwork.name} '
+              '(chainId=${_currentNetwork.chainId}), '
+              'but RPC is chainId=$chainId. Please switch network or RPC.',
+        );
+      }
+
       final nonce = await _rpcClient!.getTransactionCount(
         _currentAccount!.address,
       );
       final gasPriceHex = await _rpcClient!.getGasPrice();
       final gasPrice = _parseHexToBigInt(gasPriceHex);
-      final chainId = await _rpcClient!.getChainId();
 
       client = http.Client();
       web3Client = web3.Web3Client(_currentNetwork.rpcUrl, client);
       final credentials = web3.EthPrivateKey.fromHex(privateKeyHex);
       final tx = web3.Transaction(
         from: web3.EthereumAddress.fromHex(_currentAccount!.address),
-        to: web3.EthereumAddress.fromHex(toAddress),
+        to: web3.EthereumAddress.fromHex(normalizedToAddress),
         maxGas: AppConstants.defaultGasLimitTransfer,
         gasPrice: web3.EtherAmount.inWei(gasPrice),
         nonce: nonce,
@@ -728,6 +748,77 @@ class WalletProvider extends ChangeNotifier {
     return RegExp(r'^0x[a-fA-F0-9]{40}$').hasMatch(trimmed);
   }
 
+  _EvmTransferTargetCheck _checkEvmTransferTarget({
+    required String senderAddress,
+    required String recipientInput,
+    required bool mixedFormatConfirmed,
+  }) {
+    if (!_isValidEvmAddress(senderAddress)) {
+      return const _EvmTransferTargetCheck(
+        valid: false,
+        error:
+            'Current sender is not an EVM address. Please switch to an EVM account.',
+      );
+    }
+
+    final trimmed = recipientInput.trim();
+    if (trimmed.isEmpty) {
+      return const _EvmTransferTargetCheck(
+        valid: false,
+        error: 'Recipient address is required',
+      );
+    }
+
+    if (_isValidEvmAddress(trimmed)) {
+      return _EvmTransferTargetCheck(valid: true, normalizedRecipient: trimmed);
+    }
+
+    if (_looksLikeNativeAddress(trimmed)) {
+      try {
+        final normalizedNative = CryptoUtils.normalizeNativeAddress(trimmed);
+        final nativeBody = normalizedNative.substring(
+          CryptoUtils.nativeAddressPrefix.length,
+        );
+        final normalizedEvm = '0x$nativeBody';
+        if (!mixedFormatConfirmed) {
+          return _EvmTransferTargetCheck(
+            valid: false,
+            requiresMixedFormatConfirmation: true,
+            normalizedRecipient: normalizedEvm,
+            error:
+                'Detected mixed address format: recipient uses native prefix '
+                '(${CryptoUtils.nativeAddressPrefix}...), while current flow is EVM (0x...). '
+                'Please confirm conversion to continue.',
+          );
+        }
+        return _EvmTransferTargetCheck(
+          valid: true,
+          normalizedRecipient: normalizedEvm,
+        );
+      } catch (_) {
+        return const _EvmTransferTargetCheck(
+          valid: false,
+          error: 'Invalid native address format',
+        );
+      }
+    }
+
+    return const _EvmTransferTargetCheck(
+      valid: false,
+      error: 'Invalid recipient address',
+    );
+  }
+
+  bool _looksLikeNativeAddress(String value) {
+    if (value.startsWith(CryptoUtils.nativeAddressPrefix)) {
+      return true;
+    }
+    if (value.startsWith('ZERO')) {
+      return true;
+    }
+    return value.startsWith('native1');
+  }
+
   BigInt? _parseAmountToBaseUnit(String amountText, int decimals) {
     final cleaned = amountText.trim();
     if (cleaned.isEmpty) {
@@ -855,8 +946,30 @@ class SendPaymentResult {
   final bool success;
   final String? txHash;
   final String? error;
+  final bool requiresMixedFormatConfirmation;
+  final String? normalizedToAddress;
 
-  SendPaymentResult({required this.success, this.txHash, this.error});
+  SendPaymentResult({
+    required this.success,
+    this.txHash,
+    this.error,
+    this.requiresMixedFormatConfirmation = false,
+    this.normalizedToAddress,
+  });
+}
+
+class _EvmTransferTargetCheck {
+  final bool valid;
+  final bool requiresMixedFormatConfirmation;
+  final String? normalizedRecipient;
+  final String? error;
+
+  const _EvmTransferTargetCheck({
+    required this.valid,
+    this.requiresMixedFormatConfirmation = false,
+    this.normalizedRecipient,
+    this.error,
+  });
 }
 
 class NativeComputeActionResult {

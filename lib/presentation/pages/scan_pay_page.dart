@@ -59,7 +59,7 @@ class _ScanPayPageState extends State<ScanPayPage> {
               color: Colors.black54,
               padding: const EdgeInsets.all(14),
               child: const Text(
-                'Scan recipient QR (supports 0x... / ethereum: / value)',
+                'Scan recipient QR (supports 0x... / ZER0x... / ethereum: / value)',
                 style: TextStyle(color: Colors.white),
                 textAlign: TextAlign.center,
               ),
@@ -119,6 +119,8 @@ class _ScanPayPageState extends State<ScanPayPage> {
   }
 
   bool _isAddress(String value) {
-    return RegExp(r'^0x[a-fA-F0-9]{40}$').hasMatch(value);
+    return RegExp(
+      r'^(0x|ZER0x|ZERO|native1)[a-fA-F0-9]{40}$',
+    ).hasMatch(value);
   }
 }
