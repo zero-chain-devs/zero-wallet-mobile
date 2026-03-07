@@ -15,6 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int _welcomeNavIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +52,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildWelcomeScreen() {
+    const chipLabels = <String>[
+      'Zero Wallet Home',
+      'Discover Zero',
+      'Swap Preview',
+      'Recent Activity',
+      'Wallet Settings',
+    ];
+    const headlines = <String>[
+      '立即开始使用\nZero Wallet',
+      '探索行情与资产\n发现更多机会',
+      '快速兑换资产\nCrypto <> Cash',
+      '查看最近记录\n掌握资金流向',
+      '管理网络与偏好\n守护你的资产',
+    ];
+    const descriptions = <String>[
+      '原生链钱包和 EVM 钱包共存，视觉按参考稿复刻成同一套 Phantom 风格深色界面。',
+      '统一查看市场和资产变化，后续会接入更完整的行情与深度数据。',
+      '支持在 ZeroChain 生态内进行资产交换，后续接入真实撮合与路由。',
+      '交易与操作记录集中展示，方便快速定位每一笔动作。',
+      '在这里切换网络、账户与安全设置，管理你的钱包环境。',
+    ];
+    final headline = headlines[_welcomeNavIndex];
+    final description = descriptions[_welcomeNavIndex];
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -62,199 +88,209 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             Expanded(
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: -100,
-                    top: 20,
-                    child: Container(
-                      width: 260,
-                      height: 260,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0x26FFFFFF),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: -60,
-                    top: 150,
-                    child: Container(
-                      width: 220,
-                      height: 220,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0x14FFFFFF),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 44,
-                    top: 242,
-                    child: Transform.rotate(
-                      angle: 0.3,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: -100,
+                      top: 20,
                       child: Container(
-                        width: 108,
-                        height: 108,
-                        decoration: BoxDecoration(
+                        width: 260,
+                        height: 260,
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: WalletUi.lime,
-                          border: Border.all(
-                            color: const Color(0xFF95A60B),
-                            width: 1.5,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x55747E12),
-                              blurRadius: 28,
-                              offset: Offset(0, 12),
-                            ),
-                          ],
+                          color: Color(0x26FFFFFF),
                         ),
-                        child: Center(
-                          child: Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFF2C214A),
-                                width: 2.2,
-                              ),
+                      ),
+                    ),
+                    Positioned(
+                      right: -60,
+                      top: 150,
+                      child: Container(
+                        width: 220,
+                        height: 220,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0x14FFFFFF),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 44,
+                      top: 242,
+                      child: Transform.rotate(
+                        angle: 0.3,
+                        child: Container(
+                          width: 108,
+                          height: 108,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: WalletUi.lime,
+                            border: Border.all(
+                              color: const Color(0xFF95A60B),
+                              width: 1.5,
                             ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.mode_comment_outlined,
-                                color: Color(0xFF2C214A),
-                                size: 28,
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x55747E12),
+                                blurRadius: 28,
+                                offset: Offset(0, 12),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 58,
+                              height: 58,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF2C214A),
+                                  width: 2.2,
+                                ),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.mode_comment_outlined,
+                                  color: Color(0xFF2C214A),
+                                  size: 28,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _FloatingGlassCard(
-                          title: 'Cash Balance',
-                          subtitle: '\$18,207.41',
-                          width: 192,
-                          icon: Icons.chat_bubble_outline_rounded,
-                        ),
-                        const SizedBox(height: 14),
-                        const Align(
-                          alignment: Alignment.centerRight,
-                          child: _FloatingGlassCard(
-                            title: 'Send',
-                            subtitle: 'To friends',
-                            width: 174,
-                            icon: Icons.attach_money_rounded,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _FloatingGlassCard(
+                            title: 'Cash Balance',
+                            subtitle: '\$18,207.41',
+                            width: 192,
+                            icon: Icons.chat_bubble_outline_rounded,
                           ),
-                        ),
-                        const SizedBox(height: 14),
-                        const _FloatingGlassCard(
-                          title: 'Trade',
-                          subtitle: 'Crypto <> Cash',
-                          width: 208,
-                          icon: Icons.compare_arrows_rounded,
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: const Text(
-                            'Zero Cash Sneak Peek',
-                            style: TextStyle(
-                              color: Color(0xFF2B1F52),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              height: 1,
+                          const SizedBox(height: 14),
+                          const Align(
+                            alignment: Alignment.centerRight,
+                            child: _FloatingGlassCard(
+                              title: 'Send',
+                              subtitle: 'To friends',
+                              width: 174,
+                              icon: Icons.attach_money_rounded,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 18),
-                        const Text(
-                          '立即开始使用\nZero Wallet',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 46,
-                            fontWeight: FontWeight.w900,
-                            height: 0.92,
+                          const SizedBox(height: 14),
+                          const _FloatingGlassCard(
+                            title: 'Trade',
+                            subtitle: 'Crypto <> Cash',
+                            width: 208,
+                            icon: Icons.compare_arrows_rounded,
                           ),
-                        ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          '原生链钱包和 EVM 钱包共存，视觉按参考稿复刻成同一套 Phantom 风格深色界面。',
-                          style: TextStyle(
-                            color: Color(0xF0FFFFFF),
-                            fontSize: 15,
-                            height: 1.35,
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _navigateToCreateWallet,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: WalletUi.lime,
-                              foregroundColor: Colors.black,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
+                          const SizedBox(height: 28),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
                             ),
-                            child: const Text(
-                              '输入',
-                              style: TextStyle(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Text(
+                              chipLabels[_welcomeNavIndex],
+                              style: const TextStyle(
+                                color: Color(0xFF2B1F52),
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
+                                height: 1,
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: _navigateToImportWallet,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.28),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
+                          const SizedBox(height: 18),
+                          Text(
+                            headline,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 46,
+                              fontWeight: FontWeight.w900,
+                              height: 0.92,
                             ),
-                            child: const Text(
-                              '导入已有钱包',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            description,
+                            style: const TextStyle(
+                              color: Color(0xF0FFFFFF),
+                              fontSize: 15,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _navigateToCreateWallet,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: WalletUi.lime,
+                                foregroundColor: Colors.black,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                              ),
+                              child: const Text(
+                                '输入',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _navigateToImportWallet,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.28),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                              ),
+                              child: const Text(
+                                '导入已有钱包',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            WalletBottomNav(currentIndex: 1, onTap: _noopNav),
+            WalletBottomNav(
+              currentIndex: _welcomeNavIndex,
+              onTap: (index) => setState(() => _welcomeNavIndex = index),
+            ),
           ],
         ),
       ),
@@ -326,8 +362,6 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(builder: (context) => const ImportWalletPage()),
     );
   }
-
-  static void _noopNav(int _) {}
 }
 
 class _FloatingGlassCard extends StatelessWidget {
