@@ -55,11 +55,11 @@ class ZeroChainRpcClient {
     if (payload.containsKey('error')) {
       final error = payload['error'] as Map<String, dynamic>;
       final code = error['code'] as int? ?? -32000;
-      var message = error['message'] as String? ?? 'Unknown error';
-      if (code == -32010 && method == 'eth_sendRawTransaction') {
-        message =
-            '节点默认关闭 eth_sendRawTransaction，请以 --rpc-enable-eth-write-rpcs 启动节点（仅建议开发环境）。';
-      }
+      final message = mapRpcErrorMessage(
+        code: code,
+        method: method,
+        defaultMessage: error['message'] as String? ?? 'Unknown error',
+      );
       throw RpcException(
         code: code,
         message: message,
@@ -219,6 +219,18 @@ class ZeroChainRpcClient {
       radix: 16,
     );
   }
+}
+
+String mapRpcErrorMessage({
+  required int code,
+  required String method,
+  required String defaultMessage,
+}) {
+  if (code == -32010 && method == 'eth_sendRawTransaction') {
+    return '当前节点默认关闭 eth_sendRawTransaction。请在开发环境使用 --rpc-enable-eth-write-rpcs 启动节点。';
+  }
+
+  return defaultMessage;
 }
 
 class RpcException implements Exception {
