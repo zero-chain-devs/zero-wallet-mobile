@@ -3,21 +3,20 @@ import 'package:zero_wallet/core/network/rpc_client.dart';
 
 void main() {
   group('mapRpcErrorMessage', () {
-    test('returns write-rpc hint for eth_sendRawTransaction disabled code', () {
+    test('keeps default message for native rpc errors', () {
       final message = mapRpcErrorMessage(
-        code: -32010,
-        method: 'eth_sendRawTransaction',
-        defaultMessage: 'Ethereum write RPCs are disabled',
+        code: -32000,
+        method: 'zero_submitComputeTx',
+        defaultMessage: 'Native compute submission failed',
       );
 
-      expect(message, contains('--rpc-enable-eth-write-rpcs'));
-      expect(message, contains('eth_sendRawTransaction'));
+      expect(message, 'Native compute submission failed');
     });
 
-    test('keeps default message for unrelated rpc errors', () {
+    test('keeps default message for unknown methods', () {
       final message = mapRpcErrorMessage(
         code: -32601,
-        method: 'eth_getTransactionReceipt',
+        method: 'zero_getAccount',
         defaultMessage: 'Method not found',
       );
 

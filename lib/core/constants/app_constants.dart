@@ -16,14 +16,8 @@ class AppConstants {
   static const int blockTimeSeconds = 10;
   static const int confirmationsRequired = 6;
   static const int dustAmount = 1000;
-  static const int defaultGasPrice = 20000000000;
-  static const int defaultGasLimitTransfer = 21000;
-  static const int defaultGasLimitContract = 100000;
   static const int pbkdf2Iterations = 120000;
-  static const String defaultDerivationPath = "m/44'/60'/0'/0/0";
 
-  static const String storageKeyMnemonic = 'encrypted_mnemonic';
-  static const String storageKeyPrivateKey = 'encrypted_private_key';
   static const String storageKeyCurrentNetwork = 'current_network';
   static const String storageKeyCustomNetworks = 'custom_networks';
   static const String storageKeyWalletName = 'wallet_name';

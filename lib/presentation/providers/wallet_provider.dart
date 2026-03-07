@@ -2,10 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:web3dart/crypto.dart' as web3crypto;
-import 'package:web3dart/web3dart.dart' as web3;
 
 import '../../core/constants/app_constants.dart';
 import '../../core/network/rpc_client.dart';
@@ -99,36 +96,23 @@ class WalletProvider extends ChangeNotifier {
   Future<CreateWalletResult> createWallet({
     required String name,
     required String password,
-    SignatureScheme signatureScheme = SignatureScheme.secp256k1,
+    SignatureScheme signatureScheme = SignatureScheme.ed25519,
   }) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      DerivedWalletData derivedWallet;
-      String? encryptedMnemonic;
-      String? backupValue;
-      String? backupTitle;
-      String? backupDescription;
-
-      if (signatureScheme == SignatureScheme.secp256k1) {
-        final mnemonic = CryptoUtils.generateMnemonic(wordCount: 12);
-        derivedWallet = await CryptoUtils.deriveWalletFromMnemonic(
-          mnemonic,
-          signatureScheme: signatureScheme,
+      if (signatureScheme != SignatureScheme.ed25519) {
+        return CreateWalletResult(
+          success: false,
+          error: 'Only native ed25519 wallet is supported',
         );
-        encryptedMnemonic = await CryptoUtils.encryptData(mnemonic, password);
-        backupValue = mnemonic;
-        backupTitle = 'Backup Your EVM Recovery Phrase';
-        backupDescription =
-            'This BIP39 mnemonic restores your secp256k1 / EVM account.';
-      } else {
-        derivedWallet = await CryptoUtils.createNativeWallet();
-        backupValue = CryptoUtils.normalizeHex(derivedWallet.privateKey);
-        backupTitle = 'Backup Your Native Private Key';
-        backupDescription =
-            'This ed25519 private key restores your ZeroChain native account.';
       }
+
+      final derivedWallet = await CryptoUtils.createNativeWallet();
+      final normalizedPrivateKey = CryptoUtils.normalizeHex(
+        derivedWallet.privateKey,
+      );
 
       if (_accounts.any(
         (account) =>
@@ -151,14 +135,10 @@ class WalletProvider extends ChangeNotifier {
         address: derivedWallet.address,
         publicKey: derivedWallet.publicKey,
         privateKeyEncrypted: encryptedPrivateKey,
-        mnemonicEncrypted: encryptedMnemonic,
-        signatureScheme: signatureScheme,
+        signatureScheme: SignatureScheme.ed25519,
       );
 
-      _accounts = _markCurrent(<WalletAccount>[
-        ..._accounts,
-        account,
-      ], account.id);
+      _accounts = _markCurrent(<WalletAccount>[..._accounts, account], account.id);
       _currentAccount = _accounts.firstWhere((item) => item.id == account.id);
       await _persistAccounts();
       await refreshBalance();
@@ -167,9 +147,10 @@ class WalletProvider extends ChangeNotifier {
       return CreateWalletResult(
         success: true,
         account: _currentAccount,
-        backupValue: backupValue,
-        backupTitle: backupTitle,
-        backupDescription: backupDescription,
+        backupValue: normalizedPrivateKey,
+        backupTitle: 'Backup Your Native Private Key',
+        backupDescription:
+            'This ed25519 private key restores your ZeroChain native account.',
       );
     } catch (e) {
       _error = 'Failed to create wallet: $e';
@@ -186,45 +167,27 @@ class WalletProvider extends ChangeNotifier {
     required String name,
     required String password,
     required WalletImportMode importMode,
-    SignatureScheme signatureScheme = SignatureScheme.secp256k1,
+    SignatureScheme signatureScheme = SignatureScheme.ed25519,
   }) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      DerivedWalletData derivedWallet;
-      String? encryptedMnemonic;
-
-      if (signatureScheme == SignatureScheme.ed25519) {
-        if (importMode != WalletImportMode.privateKey) {
-          return ImportWalletResult(
-            success: false,
-            error: 'Native ed25519 import requires a private key',
-          );
-        }
-        derivedWallet = await CryptoUtils.deriveWalletFromPrivateKey(
-          data,
-          signatureScheme: SignatureScheme.ed25519,
+      if (signatureScheme != SignatureScheme.ed25519) {
+        return ImportWalletResult(
+          success: false,
+          error: 'Only native ed25519 wallet is supported',
         );
-      } else if (importMode == WalletImportMode.privateKey) {
-        derivedWallet = await CryptoUtils.deriveWalletFromPrivateKey(
-          data,
-          signatureScheme: SignatureScheme.secp256k1,
-        );
-      } else {
-        final mnemonic = data.trim().toLowerCase();
-        if (!CryptoUtils.validateMnemonic(mnemonic)) {
-          return ImportWalletResult(
-            success: false,
-            error: 'Invalid mnemonic phrase',
-          );
-        }
-        derivedWallet = await CryptoUtils.deriveWalletFromMnemonic(
-          mnemonic,
-          signatureScheme: SignatureScheme.secp256k1,
-        );
-        encryptedMnemonic = await CryptoUtils.encryptData(mnemonic, password);
       }
+
+      if (importMode != WalletImportMode.privateKey) {
+        return ImportWalletResult(
+          success: false,
+          error: 'Native wallet import requires private key',
+        );
+      }
+
+      final derivedWallet = await CryptoUtils.deriveWalletFromPrivateKey(data);
 
       if (_accounts.any(
         (account) =>
@@ -247,14 +210,10 @@ class WalletProvider extends ChangeNotifier {
         address: derivedWallet.address,
         publicKey: derivedWallet.publicKey,
         privateKeyEncrypted: encryptedPrivateKey,
-        mnemonicEncrypted: encryptedMnemonic,
-        signatureScheme: signatureScheme,
+        signatureScheme: SignatureScheme.ed25519,
       );
 
-      _accounts = _markCurrent(<WalletAccount>[
-        ..._accounts,
-        account,
-      ], account.id);
+      _accounts = _markCurrent(<WalletAccount>[..._accounts, account], account.id);
       _currentAccount = _accounts.firstWhere((item) => item.id == account.id);
       await _persistAccounts();
       await refreshBalance();
@@ -351,118 +310,6 @@ class WalletProvider extends ChangeNotifier {
     return true;
   }
 
-  Future<SendPaymentResult> sendPayment({
-    required String toAddress,
-    required String amountText,
-    required String password,
-    bool mixedFormatConfirmed = false,
-  }) async {
-    if (_currentAccount == null) {
-      return SendPaymentResult(success: false, error: 'No active account');
-    }
-
-    if (_currentAccount!.signatureScheme != SignatureScheme.secp256k1) {
-      return SendPaymentResult(
-        success: false,
-        error:
-            'Current account is native ed25519. Switch to an EVM account first.',
-      );
-    }
-
-    final targetCheck = _checkEvmTransferTarget(
-      senderAddress: _currentAccount!.address,
-      recipientInput: toAddress,
-      mixedFormatConfirmed: mixedFormatConfirmed,
-    );
-    if (!targetCheck.valid) {
-      return SendPaymentResult(
-        success: false,
-        error: targetCheck.error ?? 'Invalid recipient address',
-        requiresMixedFormatConfirmation:
-            targetCheck.requiresMixedFormatConfirmation,
-        normalizedToAddress: targetCheck.normalizedRecipient,
-      );
-    }
-
-    final normalizedToAddress = targetCheck.normalizedRecipient ?? toAddress;
-    final amountWei = _parseAmountToBaseUnit(
-      amountText,
-      _currentNetwork.decimals,
-    );
-    if (amountWei == null || amountWei <= BigInt.zero) {
-      return SendPaymentResult(success: false, error: 'Invalid amount');
-    }
-
-    _isLoading = true;
-    notifyListeners();
-
-    http.Client? client;
-    web3.Web3Client? web3Client;
-    try {
-      final privateKeyHex = await getPrivateKey(
-        _currentAccount!.address,
-        password,
-      );
-      if (privateKeyHex == null || privateKeyHex.isEmpty) {
-        return SendPaymentResult(
-          success: false,
-          error: 'Password incorrect or private key unavailable',
-        );
-      }
-
-      _rpcClient ??= ZeroChainRpcClient(network: _currentNetwork.toConfig());
-      final chainId = await _rpcClient!.getChainId();
-      if (chainId != _currentNetwork.chainId) {
-        return SendPaymentResult(
-          success: false,
-          error:
-              'Network mismatch: selected ${_currentNetwork.name} '
-              '(chainId=${_currentNetwork.chainId}), '
-              'but RPC is chainId=$chainId. Please switch network or RPC.',
-        );
-      }
-
-      final nonce = await _rpcClient!.getTransactionCount(
-        _currentAccount!.address,
-      );
-      final gasPriceHex = await _rpcClient!.getGasPrice();
-      final gasPrice = _parseHexToBigInt(gasPriceHex);
-
-      client = http.Client();
-      web3Client = web3.Web3Client(_currentNetwork.rpcUrl, client);
-      final credentials = web3.EthPrivateKey.fromHex(privateKeyHex);
-      final tx = web3.Transaction(
-        from: web3.EthereumAddress.fromHex(_currentAccount!.address),
-        to: web3.EthereumAddress.fromHex(normalizedToAddress),
-        maxGas: AppConstants.defaultGasLimitTransfer,
-        gasPrice: web3.EtherAmount.inWei(gasPrice),
-        nonce: nonce,
-        value: web3.EtherAmount.inWei(amountWei),
-      );
-
-      final signed = await web3Client.signTransaction(
-        credentials,
-        tx,
-        chainId: chainId,
-      );
-      final rawTxHex = web3crypto.bytesToHex(signed, include0x: true);
-      final txHash = await _rpcClient!.sendRawTransaction(rawTxHex);
-
-      _error = null;
-      await refreshBalance();
-      return SendPaymentResult(success: true, txHash: txHash);
-    } catch (e) {
-      _error = 'Send payment failed: $e';
-      AppLogger.error('Send payment failed', e);
-      return SendPaymentResult(success: false, error: _error);
-    } finally {
-      web3Client?.dispose();
-      client?.close();
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   Future<NativeComputeActionResult> simulateNativeComputeTx({
     required String jsonText,
     required String password,
@@ -500,8 +347,7 @@ class WalletProvider extends ChangeNotifier {
     if (_currentAccount!.signatureScheme != SignatureScheme.ed25519) {
       return NativeComputeActionResult(
         success: false,
-        error:
-            'Current account is EVM secp256k1. Switch to a native account first.',
+        error: 'Current account is not native ed25519',
       );
     }
 
@@ -556,70 +402,17 @@ class WalletProvider extends ChangeNotifier {
     }
   }
 
-  Future<TxConfirmationResult> waitForTransactionConfirmation(
-    String txHash, {
-    Duration timeout = const Duration(seconds: 90),
-    Duration pollInterval = const Duration(seconds: 3),
-  }) async {
-    _rpcClient ??= ZeroChainRpcClient(network: _currentNetwork.toConfig());
-
-    final startedAt = DateTime.now();
-    while (DateTime.now().difference(startedAt) < timeout) {
-      try {
-        final receipt = await _rpcClient!.getTransactionReceipt(txHash);
-        if (receipt != null) {
-          final status = (receipt['status'] as String?)?.toLowerCase();
-          final blockNumber = (receipt['blockNumber'] as String?) ?? '';
-          final confirmed = status == '0x1' || status == '1';
-          final failed = status == '0x0' || status == '0';
-
-          if (confirmed) {
-            return TxConfirmationResult(
-              state: TxConfirmationState.confirmed,
-              txHash: txHash,
-              blockNumber: blockNumber,
-            );
-          }
-
-          if (failed) {
-            return TxConfirmationResult(
-              state: TxConfirmationState.failed,
-              txHash: txHash,
-              blockNumber: blockNumber,
-              error: 'Transaction execution failed on-chain',
-            );
-          }
-        }
-      } catch (e) {
-        AppLogger.error('Check tx receipt failed', e);
-      }
-
-      await Future<void>.delayed(pollInterval);
-    }
-
-    return TxConfirmationResult(
-      state: TxConfirmationState.pending,
-      txHash: txHash,
-      error: 'Confirmation timeout, status still pending',
-    );
-  }
-
   Future<void> refreshBalance() async {
     if (_currentAccount == null) {
       _currentBalance = null;
       return;
     }
 
-    if (_currentAccount!.signatureScheme != SignatureScheme.secp256k1) {
-      _currentBalance = null;
-      _error = null;
-      notifyListeners();
-      return;
-    }
-
     try {
       _rpcClient ??= ZeroChainRpcClient(network: _currentNetwork.toConfig());
-      final rawBalance = await _rpcClient!.getBalance(_currentAccount!.address);
+      final accountInfo = await _rpcClient!.getAccount(_currentAccount!.address);
+      final rawBalance = accountInfo['balance']?.toString() ?? '0x0';
+
       _currentBalance = AccountBalance.fromRaw(
         address: _currentAccount!.address,
         rawBalance: rawBalance,
@@ -646,31 +439,9 @@ class WalletProvider extends ChangeNotifier {
       final account = _accounts.firstWhere(
         (item) => item.address.toLowerCase() == address.toLowerCase(),
       );
-      return await CryptoUtils.decryptData(
-        account.privateKeyEncrypted,
-        password,
-      );
+      return await CryptoUtils.decryptData(account.privateKeyEncrypted, password);
     } catch (e) {
       AppLogger.error('Get private key failed', e);
-      return null;
-    }
-  }
-
-  Future<String?> getMnemonic(String address, String password) async {
-    try {
-      final account = _accounts.firstWhere(
-        (item) => item.address.toLowerCase() == address.toLowerCase(),
-      );
-      if (account.mnemonicEncrypted == null) {
-        return null;
-      }
-
-      return await CryptoUtils.decryptData(
-        account.mnemonicEncrypted!,
-        password,
-      );
-    } catch (e) {
-      AppLogger.error('Get mnemonic failed', e);
       return null;
     }
   }
@@ -693,10 +464,7 @@ class WalletProvider extends ChangeNotifier {
     var config = NetworkConfig.getById(id) ?? NetworkConfig.local;
     final overrideRpc = _networkRpcOverrides[id];
     if (overrideRpc != null && overrideRpc.isNotEmpty) {
-      config = config.copyWith(
-        rpcUrl: overrideRpc,
-        wsUrl: _toWsUrl(overrideRpc),
-      );
+      config = config.copyWith(rpcUrl: overrideRpc, wsUrl: _toWsUrl(overrideRpc));
     }
     return WalletNetwork.fromConfig(config, isActive: true);
   }
@@ -743,113 +511,6 @@ class WalletProvider extends ChangeNotifier {
     return rpcUrl;
   }
 
-  bool _isValidEvmAddress(String value) {
-    final trimmed = value.trim();
-    return RegExp(r'^0x[a-fA-F0-9]{40}$').hasMatch(trimmed);
-  }
-
-  _EvmTransferTargetCheck _checkEvmTransferTarget({
-    required String senderAddress,
-    required String recipientInput,
-    required bool mixedFormatConfirmed,
-  }) {
-    if (!_isValidEvmAddress(senderAddress)) {
-      return const _EvmTransferTargetCheck(
-        valid: false,
-        error:
-            'Current sender is not an EVM address. Please switch to an EVM account.',
-      );
-    }
-
-    final trimmed = recipientInput.trim();
-    if (trimmed.isEmpty) {
-      return const _EvmTransferTargetCheck(
-        valid: false,
-        error: 'Recipient address is required',
-      );
-    }
-
-    if (_isValidEvmAddress(trimmed)) {
-      return _EvmTransferTargetCheck(valid: true, normalizedRecipient: trimmed);
-    }
-
-    if (_looksLikeNativeAddress(trimmed)) {
-      try {
-        final normalizedNative = CryptoUtils.normalizeNativeAddress(trimmed);
-        final nativeBody = normalizedNative.substring(
-          CryptoUtils.nativeAddressPrefix.length,
-        );
-        final normalizedEvm = '0x$nativeBody';
-        if (!mixedFormatConfirmed) {
-          return _EvmTransferTargetCheck(
-            valid: false,
-            requiresMixedFormatConfirmation: true,
-            normalizedRecipient: normalizedEvm,
-            error:
-                'Detected mixed address format: recipient uses native prefix '
-                '(${CryptoUtils.nativeAddressPrefix}...), while current flow is EVM (0x...). '
-                'Please confirm conversion to continue.',
-          );
-        }
-        return _EvmTransferTargetCheck(
-          valid: true,
-          normalizedRecipient: normalizedEvm,
-        );
-      } catch (_) {
-        return const _EvmTransferTargetCheck(
-          valid: false,
-          error: 'Invalid native address format',
-        );
-      }
-    }
-
-    return const _EvmTransferTargetCheck(
-      valid: false,
-      error: 'Invalid recipient address',
-    );
-  }
-
-  bool _looksLikeNativeAddress(String value) {
-    if (value.startsWith(CryptoUtils.nativeAddressPrefix)) {
-      return true;
-    }
-    if (value.startsWith('ZERO')) {
-      return true;
-    }
-    return value.startsWith('native1');
-  }
-
-  BigInt? _parseAmountToBaseUnit(String amountText, int decimals) {
-    final cleaned = amountText.trim();
-    if (cleaned.isEmpty) {
-      return null;
-    }
-
-    final match = RegExp(r'^\d+(\.\d+)?$').firstMatch(cleaned);
-    if (match == null) {
-      return null;
-    }
-
-    final parts = cleaned.split('.');
-    final whole = BigInt.parse(parts[0]);
-    final fraction = parts.length == 2 ? parts[1] : '';
-    if (fraction.length > decimals) {
-      return null;
-    }
-
-    final padded = fraction.padRight(decimals, '0');
-    final fracValue = padded.isEmpty ? BigInt.zero : BigInt.parse(padded);
-    return whole * BigInt.from(10).pow(decimals) + fracValue;
-  }
-
-  BigInt _parseHexToBigInt(String value) {
-    final normalized = value.startsWith('0x') ? value.substring(2) : value;
-    if (normalized.isEmpty) {
-      return BigInt.zero;
-    }
-    return BigInt.parse(normalized, radix: 16);
-  }
-
   WalletAccount _selectCurrentAccount(String? accountId) {
     if (accountId != null) {
       for (final account in _accounts) {
@@ -868,36 +529,27 @@ class WalletProvider extends ChangeNotifier {
   ) {
     return accounts
         .map(
-          (account) =>
-              account.copyWith(isCurrent: account.id == currentAccountId),
+          (account) => account.copyWith(isCurrent: account.id == currentAccountId),
         )
         .toList();
   }
 
   WalletAccount _normalizeAccountAddress(WalletAccount account) {
-    if (account.signatureScheme != SignatureScheme.ed25519) {
-      return account;
-    }
-
     try {
       final normalized = CryptoUtils.normalizeNativeAddress(account.address);
-      return account.copyWith(address: normalized);
+      return account.copyWith(address: normalized, signatureScheme: SignatureScheme.ed25519);
     } catch (_) {}
 
     try {
-      final normalized = CryptoUtils.formatNativeAddressFromPublicKey(
-        account.publicKey,
-      );
-      return account.copyWith(address: normalized);
+      final normalized = CryptoUtils.formatNativeAddressFromPublicKey(account.publicKey);
+      return account.copyWith(address: normalized, signatureScheme: SignatureScheme.ed25519);
     } catch (_) {
-      return account;
+      return account.copyWith(signatureScheme: SignatureScheme.ed25519);
     }
   }
 
   Future<void> _persistAccounts() async {
-    final payload = jsonEncode(
-      _accounts.map((account) => account.toJson()).toList(),
-    );
+    final payload = jsonEncode(_accounts.map((account) => account.toJson()).toList());
     await _secureStorage.write(
       key: AppConstants.storageKeyWalletAccounts,
       value: payload,
@@ -914,7 +566,7 @@ class WalletProvider extends ChangeNotifier {
   }
 }
 
-enum WalletImportMode { mnemonic, privateKey }
+enum WalletImportMode { privateKey }
 
 class CreateWalletResult {
   final bool success;
@@ -942,36 +594,6 @@ class ImportWalletResult {
   ImportWalletResult({required this.success, this.account, this.error});
 }
 
-class SendPaymentResult {
-  final bool success;
-  final String? txHash;
-  final String? error;
-  final bool requiresMixedFormatConfirmation;
-  final String? normalizedToAddress;
-
-  SendPaymentResult({
-    required this.success,
-    this.txHash,
-    this.error,
-    this.requiresMixedFormatConfirmation = false,
-    this.normalizedToAddress,
-  });
-}
-
-class _EvmTransferTargetCheck {
-  final bool valid;
-  final bool requiresMixedFormatConfirmation;
-  final String? normalizedRecipient;
-  final String? error;
-
-  const _EvmTransferTargetCheck({
-    required this.valid,
-    this.requiresMixedFormatConfirmation = false,
-    this.normalizedRecipient,
-    this.error,
-  });
-}
-
 class NativeComputeActionResult {
   final bool success;
   final Map<String, dynamic>? signedTx;
@@ -982,22 +604,6 @@ class NativeComputeActionResult {
     required this.success,
     this.signedTx,
     this.result,
-    this.error,
-  });
-}
-
-enum TxConfirmationState { pending, confirmed, failed }
-
-class TxConfirmationResult {
-  final TxConfirmationState state;
-  final String txHash;
-  final String? blockNumber;
-  final String? error;
-
-  TxConfirmationResult({
-    required this.state,
-    required this.txHash,
-    this.blockNumber,
     this.error,
   });
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/models/wallet_models.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/wallet_ui.dart';
 import 'wallet_dashboard_page.dart';
@@ -21,7 +20,6 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  SignatureScheme _signatureScheme = SignatureScheme.secp256k1;
 
   @override
   void dispose() {
@@ -33,8 +31,6 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isNative = _signatureScheme == SignatureScheme.ed25519;
-
     return Scaffold(
       backgroundColor: WalletUi.background,
       body: SafeArea(
@@ -97,29 +93,16 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                           child: Row(
                             children: [
                               WalletChoicePill(
-                                label: 'EVM',
-                                active: !isNative,
-                                onTap: () => setState(
-                                  () => _signatureScheme =
-                                      SignatureScheme.secp256k1,
-                                ),
-                              ),
-                              WalletChoicePill(
                                 label: '原生',
-                                active: isNative,
-                                onTap: () => setState(
-                                  () => _signatureScheme =
-                                      SignatureScheme.ed25519,
-                                ),
+                                active: true,
+                                onTap: () {},
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          isNative
-                              ? '原生账户通过随机 ed25519 私钥生成，后续用 native 语义签名 compute 交易。'
-                              : 'EVM 账户通过标准 BIP39 助记词生成，可直接签名兼容 EVM 的交易。',
+                          '原生账户通过随机 ed25519 私钥生成，后续用 native 语义签名 compute 交易。',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.62),
                             height: 1.5,
@@ -137,7 +120,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                           style: const TextStyle(color: Colors.white),
                           decoration: WalletUi.inputDecoration(
                             label: '账户名称',
-                            hint: isNative ? 'native-1' : 'evm-1',
+                            hint: 'native-1',
                             prefixIcon: const Icon(
                               Icons.person_outline_rounded,
                               color: Colors.white54,
@@ -224,9 +207,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: provider.isLoading
-                                ? null
-                                : _createWallet,
+                            onPressed: provider.isLoading ? null : _createWallet,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: WalletUi.lime,
                               foregroundColor: Colors.black,
@@ -280,7 +261,6 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
     final result = await provider.createWallet(
       name: _nameController.text.trim(),
       password: _passwordController.text,
-      signatureScheme: _signatureScheme,
     );
 
     if (!mounted) {

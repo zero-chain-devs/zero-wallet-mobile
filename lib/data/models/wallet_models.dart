@@ -8,7 +8,6 @@ class WalletAccount extends Equatable {
   final String address;
   final String publicKey;
   final String privateKeyEncrypted;
-  final String? mnemonicEncrypted;
   final SignatureScheme signatureScheme;
   final DateTime createdAt;
   final bool isCurrent;
@@ -19,7 +18,6 @@ class WalletAccount extends Equatable {
     required this.address,
     required this.publicKey,
     required this.privateKeyEncrypted,
-    this.mnemonicEncrypted,
     required this.signatureScheme,
     required this.createdAt,
     this.isCurrent = false,
@@ -31,8 +29,7 @@ class WalletAccount extends Equatable {
     required String address,
     required String publicKey,
     required String privateKeyEncrypted,
-    String? mnemonicEncrypted,
-    SignatureScheme signatureScheme = SignatureScheme.secp256k1,
+    SignatureScheme signatureScheme = SignatureScheme.ed25519,
   }) {
     return WalletAccount(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -40,7 +37,6 @@ class WalletAccount extends Equatable {
       address: address,
       publicKey: publicKey,
       privateKeyEncrypted: privateKeyEncrypted,
-      mnemonicEncrypted: mnemonicEncrypted,
       signatureScheme: signatureScheme,
       createdAt: DateTime.now(),
     );
@@ -53,7 +49,6 @@ class WalletAccount extends Equatable {
     'address': address,
     'publicKey': publicKey,
     'privateKeyEncrypted': privateKeyEncrypted,
-    'mnemonicEncrypted': mnemonicEncrypted,
     'signatureScheme': signatureScheme.name,
     'createdAt': createdAt.toIso8601String(),
     'isCurrent': isCurrent,
@@ -66,7 +61,6 @@ class WalletAccount extends Equatable {
     address: json['address'] as String,
     publicKey: json['publicKey'] as String,
     privateKeyEncrypted: json['privateKeyEncrypted'] as String,
-    mnemonicEncrypted: json['mnemonicEncrypted'] as String?,
     signatureScheme: _parseSignatureScheme(json['signatureScheme']),
     createdAt: DateTime.parse(json['createdAt'] as String),
     isCurrent: json['isCurrent'] as bool? ?? false,
@@ -79,7 +73,6 @@ class WalletAccount extends Equatable {
     String? address,
     String? publicKey,
     String? privateKeyEncrypted,
-    String? mnemonicEncrypted,
     SignatureScheme? signatureScheme,
     DateTime? createdAt,
     bool? isCurrent,
@@ -90,7 +83,6 @@ class WalletAccount extends Equatable {
       address: address ?? this.address,
       publicKey: publicKey ?? this.publicKey,
       privateKeyEncrypted: privateKeyEncrypted ?? this.privateKeyEncrypted,
-      mnemonicEncrypted: mnemonicEncrypted ?? this.mnemonicEncrypted,
       signatureScheme: signatureScheme ?? this.signatureScheme,
       createdAt: createdAt ?? this.createdAt,
       isCurrent: isCurrent ?? this.isCurrent,
@@ -104,40 +96,26 @@ class WalletAccount extends Equatable {
     address,
     publicKey,
     privateKeyEncrypted,
-    mnemonicEncrypted,
     signatureScheme,
     createdAt,
     isCurrent,
   ];
 
   static SignatureScheme _parseSignatureScheme(Object? value) {
-    if (value is String) {
-      final normalized = value.trim().toLowerCase();
-      if (normalized == SignatureScheme.secp256k1.name) {
-        return SignatureScheme.secp256k1;
-      }
-      if (normalized == 'ed25519') {
-        return SignatureScheme.ed25519;
-      }
+    if (value is String && value.trim().toLowerCase() == 'ed25519') {
+      return SignatureScheme.ed25519;
     }
 
-    if (value is int) {
-      // Legacy serialized index: 0 -> secp256k1, 1 -> ed25519
-      if (value == 0) {
-        return SignatureScheme.secp256k1;
-      }
-      if (value == 1) {
-        return SignatureScheme.ed25519;
-      }
+    if (value is int && value == 1) {
+      return SignatureScheme.ed25519;
     }
 
-    return SignatureScheme.secp256k1;
+    return SignatureScheme.ed25519;
   }
 }
 
 /// Signature scheme enumeration
 enum SignatureScheme {
-  secp256k1, // EVM compatible
   ed25519, // Native ZeroChain
 }
 

@@ -67,7 +67,7 @@ class _HomePageState extends State<HomePage> {
       '管理网络与偏好\n守护你的资产',
     ];
     const descriptions = <String>[
-      '原生链钱包和 EVM 钱包共存，视觉按参考稿复刻成同一套 Phantom 风格深色界面。',
+      '当前版本聚焦原生链钱包，视觉按参考稿复刻为同一套 Phantom 风格深色界面。',
       '统一查看市场和资产变化，后续会接入更完整的行情与深度数据。',
       '支持在 ZeroChain 生态内进行资产交换，后续接入真实撮合与路由。',
       '交易与操作记录集中展示，方便快速定位每一笔动作。',

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/models/wallet_models.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/wallet_ui.dart';
 import 'wallet_dashboard_page.dart';
@@ -21,8 +20,6 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  SignatureScheme _signatureScheme = SignatureScheme.secp256k1;
-  WalletImportMode _importMode = WalletImportMode.privateKey;
 
   @override
   void dispose() {
@@ -35,18 +32,6 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isNative = _signatureScheme == SignatureScheme.ed25519;
-    final inputLabel = isNative
-        ? '原生私钥'
-        : _importMode == WalletImportMode.mnemonic
-        ? '助记词'
-        : '私钥';
-    final inputHint = isNative
-        ? '输入 32 字节 hex 私钥'
-        : _importMode == WalletImportMode.mnemonic
-        ? '输入 BIP39 助记词'
-        : '输入 32 字节 hex 私钥';
-
     return Scaffold(
       backgroundColor: WalletUi.background,
       body: SafeArea(
@@ -109,57 +94,13 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           child: Row(
                             children: [
                               WalletChoicePill(
-                                label: 'EVM',
-                                active: !isNative,
-                                onTap: () => setState(
-                                  () => _signatureScheme =
-                                      SignatureScheme.secp256k1,
-                                ),
-                              ),
-                              WalletChoicePill(
-                                label: '原生',
-                                active: isNative,
-                                onTap: () => setState(() {
-                                  _signatureScheme = SignatureScheme.ed25519;
-                                  _importMode = WalletImportMode.privateKey;
-                                }),
+                                label: '原生私钥',
+                                active: true,
+                                onTap: () {},
                               ),
                             ],
                           ),
                         ),
-                        if (!isNative) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(22),
-                            ),
-                            child: Row(
-                              children: [
-                                WalletChoicePill(
-                                  label: '私钥',
-                                  active:
-                                      _importMode ==
-                                      WalletImportMode.privateKey,
-                                  onTap: () => setState(
-                                    () => _importMode =
-                                        WalletImportMode.privateKey,
-                                  ),
-                                ),
-                                WalletChoicePill(
-                                  label: '助记词',
-                                  active:
-                                      _importMode == WalletImportMode.mnemonic,
-                                  onTap: () => setState(
-                                    () =>
-                                        _importMode = WalletImportMode.mnemonic,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -172,7 +113,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           style: const TextStyle(color: Colors.white),
                           decoration: WalletUi.inputDecoration(
                             label: '账户名称',
-                            hint: isNative ? 'native-1' : 'evm-1',
+                            hint: 'native-1',
                             prefixIcon: const Icon(
                               Icons.person_outline_rounded,
                               color: Colors.white54,
@@ -189,14 +130,10 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                         TextFormField(
                           controller: _dataController,
                           style: const TextStyle(color: Colors.white),
-                          maxLines:
-                              isNative ||
-                                  _importMode == WalletImportMode.privateKey
-                              ? 3
-                              : 4,
+                          maxLines: 3,
                           decoration: WalletUi.inputDecoration(
-                            label: inputLabel,
-                            hint: inputHint,
+                            label: '原生私钥',
+                            hint: '输入 32 字节 hex 私钥',
                             prefixIcon: const Icon(
                               Icons.vpn_key_outlined,
                               color: Colors.white54,
@@ -206,23 +143,13 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           validator: (value) {
                             final input = (value ?? '').trim();
                             if (input.isEmpty) {
-                              return '请输入$inputLabel';
+                              return '请输入原生私钥';
                             }
-                            if (isNative ||
-                                _importMode == WalletImportMode.privateKey) {
-                              final normalized = input.startsWith('0x')
-                                  ? input.substring(2)
-                                  : input;
-                              if (!RegExp(
-                                r'^[a-fA-F0-9]{64}$',
-                              ).hasMatch(normalized)) {
-                                return '私钥必须是 32 字节 hex';
-                              }
-                              return null;
-                            }
-                            final words = input.split(RegExp(r'\s+'));
-                            if (![12, 15, 18, 21, 24].contains(words.length)) {
-                              return '助记词词数应为 12 / 15 / 18 / 21 / 24';
+                            final normalized = input.startsWith('0x')
+                                ? input.substring(2)
+                                : input;
+                            if (!RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(normalized)) {
+                              return '私钥必须是 32 字节 hex';
                             }
                             return null;
                           },
@@ -300,9 +227,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: provider.isLoading
-                                ? null
-                                : _importWallet,
+                            onPressed: provider.isLoading ? null : _importWallet,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: WalletUi.lime,
                               foregroundColor: Colors.black,
@@ -357,10 +282,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
       name: _nameController.text.trim(),
       data: _dataController.text.trim(),
       password: _passwordController.text,
-      importMode: _signatureScheme == SignatureScheme.ed25519
-          ? WalletImportMode.privateKey
-          : _importMode,
-      signatureScheme: _signatureScheme,
+      importMode: WalletImportMode.privateKey,
     );
 
     if (!mounted) {

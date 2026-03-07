@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:bip39/bip39.dart' as bip39;
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:pointycastle/digests/keccak.dart';
-import 'package:wallet/wallet.dart' as wallet;
 
 import '../../data/models/wallet_models.dart';
 import '../constants/app_constants.dart';
@@ -36,96 +34,29 @@ class CryptoUtils {
     bits: 256,
   );
 
-  static String generateMnemonic({int wordCount = 12}) {
-    final strength = switch (wordCount) {
-      12 => 128,
-      15 => 160,
-      18 => 192,
-      21 => 224,
-      24 => 256,
-      _ => throw ArgumentError('Unsupported mnemonic length: $wordCount'),
-    };
-
-    return bip39.generateMnemonic(strength: strength);
-  }
-
-  static bool validateMnemonic(String mnemonic) {
-    return bip39.validateMnemonic(_normalizeMnemonic(mnemonic));
-  }
-
-  static Future<DerivedWalletData> deriveWalletFromMnemonic(
-    String mnemonic, {
-    String derivationPath = AppConstants.defaultDerivationPath,
-    SignatureScheme signatureScheme = SignatureScheme.secp256k1,
-  }) async {
-    final normalizedMnemonic = _normalizeMnemonic(mnemonic);
-    if (!bip39.validateMnemonic(normalizedMnemonic)) {
-      throw ArgumentError('Invalid mnemonic phrase');
-    }
-
-    if (signatureScheme != SignatureScheme.secp256k1) {
-      throw UnsupportedError(
-        'Native ed25519 wallet should use raw private key backup, not mnemonic derivation',
-      );
-    }
-
-    final seed = bip39.mnemonicToSeed(normalizedMnemonic, passphrase: '');
-    final master = wallet.ExtendedPrivateKey.master(seed, wallet.xprv);
-    final derived = master.forPath(derivationPath);
-    if (derived is! wallet.ExtendedPrivateKey) {
-      throw StateError('Unable to derive extended private key');
-    }
-
-    final privateKey = wallet.PrivateKey(derived.key);
-    final publicKey = wallet.ethereum.createPublicKey(privateKey);
-    final privateKeyBytes = _bigIntTo32Bytes(derived.key);
-
-    return DerivedWalletData(
-      privateKey: hex.encode(privateKeyBytes),
-      publicKey: hex.encode(publicKey.value),
-      address: wallet.ethereum.createAddress(publicKey),
-      signatureScheme: SignatureScheme.secp256k1,
-    );
-  }
-
   static Future<DerivedWalletData> deriveWalletFromPrivateKey(
-    String privateKey, {
-    required SignatureScheme signatureScheme,
-  }) async {
+    String privateKey,
+  ) async {
     final bytes = hexToBytes(privateKey);
     if (bytes.length != 32) {
       throw ArgumentError('Private key must be 32 bytes');
     }
 
-    switch (signatureScheme) {
-      case SignatureScheme.secp256k1:
-        final key = wallet.ethereum.createPrivateKey(bytes);
-        final publicKey = wallet.ethereum.createPublicKey(key);
-        return DerivedWalletData(
-          privateKey: hex.encode(bytes),
-          publicKey: hex.encode(publicKey.value),
-          address: wallet.ethereum.createAddress(publicKey),
-          signatureScheme: SignatureScheme.secp256k1,
-        );
-      case SignatureScheme.ed25519:
-        final ed = Ed25519();
-        final keyPair = await ed.newKeyPairFromSeed(bytes);
-        final publicKey = await keyPair.extractPublicKey();
-        final publicKeyBytes = Uint8List.fromList(publicKey.bytes);
-        return DerivedWalletData(
-          privateKey: hex.encode(bytes),
-          publicKey: hex.encode(publicKeyBytes),
-          address: formatNativeAddressFromPublicKey(hex.encode(publicKeyBytes)),
-          signatureScheme: SignatureScheme.ed25519,
-        );
-    }
+    final ed = Ed25519();
+    final keyPair = await ed.newKeyPairFromSeed(bytes);
+    final publicKey = await keyPair.extractPublicKey();
+    final publicKeyBytes = Uint8List.fromList(publicKey.bytes);
+
+    return DerivedWalletData(
+      privateKey: hex.encode(bytes),
+      publicKey: hex.encode(publicKeyBytes),
+      address: formatNativeAddressFromPublicKey(hex.encode(publicKeyBytes)),
+      signatureScheme: SignatureScheme.ed25519,
+    );
   }
 
   static Future<DerivedWalletData> createNativeWallet() async {
-    return deriveWalletFromPrivateKey(
-      bytesToHex(_randomBytes(32)),
-      signatureScheme: SignatureScheme.ed25519,
-    );
+    return deriveWalletFromPrivateKey(bytesToHex(_randomBytes(32)));
   }
 
   static Future<String> encryptData(String data, String password) async {
@@ -203,23 +134,6 @@ class CryptoUtils {
     );
   }
 
-  static Uint8List _bigIntTo32Bytes(BigInt value) {
-    final normalized = value.toRadixString(16).padLeft(64, '0');
-    return Uint8List.fromList(
-      List<int>.generate(
-        32,
-        (index) => int.parse(
-          normalized.substring(index * 2, index * 2 + 2),
-          radix: 16,
-        ),
-      ),
-    );
-  }
-
-  static String _normalizeMnemonic(String mnemonic) {
-    return mnemonic.trim().toLowerCase().split(RegExp(r'\s+')).join(' ');
-  }
-
   static String formatNativeAddressFromPublicKey(String publicKeyHex) {
     final publicKeyBytes = hexToBytes(publicKeyHex);
     if (publicKeyBytes.length != 32) {
@@ -239,12 +153,12 @@ class CryptoUtils {
     final body = trimmed.startsWith(nativeAddressPrefix)
         ? trimmed.substring(nativeAddressPrefix.length)
         : trimmed.startsWith('ZERO')
-        ? trimmed.substring(4)
-        : trimmed.startsWith('native1')
-        ? trimmed.substring(7)
-        : trimmed.startsWith('0x')
-        ? trimmed.substring(2)
-        : trimmed;
+            ? trimmed.substring(4)
+            : trimmed.startsWith('native1')
+                ? trimmed.substring(7)
+                : trimmed.startsWith('0x')
+                    ? trimmed.substring(2)
+                    : trimmed;
 
     if (!RegExp(r'^[a-fA-F0-9]{40}$').hasMatch(body)) {
       throw ArgumentError('Native address body must be 20-byte hex');

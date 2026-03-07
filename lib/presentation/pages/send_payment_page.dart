@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/utils/native_compute.dart';
-import '../../data/models/wallet_models.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/wallet_ui.dart';
 
@@ -21,24 +20,13 @@ class SendPaymentPage extends StatefulWidget {
 
 class _SendPaymentPageState extends State<SendPaymentPage> {
   final _formKey = GlobalKey<FormState>();
-  final _toController = TextEditingController();
-  final _amountController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nativeJsonController = TextEditingController();
   bool _obscurePassword = true;
   String? _nativeResult;
 
   @override
-  void initState() {
-    super.initState();
-    _toController.text = widget.initialTo ?? '';
-    _amountController.text = widget.initialAmount ?? '';
-  }
-
-  @override
   void dispose() {
-    _toController.dispose();
-    _amountController.dispose();
     _passwordController.dispose();
     _nativeJsonController.dispose();
     super.dispose();
@@ -49,14 +37,13 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
     return Consumer<WalletProvider>(
       builder: (context, provider, _) {
         final account = provider.currentAccount;
-        final isNative = account?.signatureScheme == SignatureScheme.ed25519;
         final template = NativeCompute.prettyTemplate(
           publicKey: account?.publicKey ?? '',
           chainId: provider.currentNetwork.chainId,
           networkId: provider.currentNetwork.networkId,
         );
 
-        if (isNative && _nativeJsonController.text.isEmpty) {
+        if (_nativeJsonController.text.isEmpty) {
           _nativeJsonController.text = template;
         }
 
@@ -83,9 +70,9 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                                 fontSize: 14,
                               ),
                             ),
-                            Text(
-                              isNative ? '原生交易' : '兑换',
-                              style: const TextStyle(
+                            const Text(
+                              '原生交易',
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 34,
                                 fontWeight: FontWeight.w800,
@@ -120,56 +107,17 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                       children: [
                         _SwapPanel(
                           title: '支付',
-                          badge: isNative
-                              ? 'NATIVE'
-                              : provider.currentNetwork.currencySymbol,
-                          bigChild: isNative
-                              ? const Text(
-                                  '0',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1,
-                                  ),
-                                )
-                              : TextFormField(
-                                  controller: _amountController,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1,
-                                  ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: '0',
-                                    hintStyle: TextStyle(color: Colors.white24),
-                                  ),
-                                  validator: (value) {
-                                    if (isNative) return null;
-                                    final text = (value ?? '').trim();
-                                    if (text.isEmpty) {
-                                      return '请输入金额';
-                                    }
-                                    if (!RegExp(
-                                      r'^\d+(\.\d+)?$',
-                                    ).hasMatch(text)) {
-                                      return '金额格式无效';
-                                    }
-                                    if ((double.tryParse(text) ?? 0) <= 0) {
-                                      return '金额需大于 0';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                          trailingLabel: isNative
-                              ? '原生 compute preimage'
-                              : '将从当前 EVM 账户签名并广播',
+                          badge: 'NATIVE',
+                          bigChild: const Text(
+                            '0',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 48,
+                              fontWeight: FontWeight.w800,
+                              height: 1,
+                            ),
+                          ),
+                          trailingLabel: '原生 compute preimage',
                         ),
                         const SizedBox(height: 10),
                         Center(
@@ -188,70 +136,35 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                         ),
                         const SizedBox(height: 10),
                         _SwapPanel(
-                          title: '收到',
-                          badge: isNative ? 'COMPUTE' : '地址',
-                          bigChild: isNative
-                              ? TextFormField(
-                                  controller: _nativeJsonController,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontFamily: 'monospace',
-                                    fontSize: 12,
-                                    height: 1.5,
-                                  ),
-                                  maxLines: 10,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: '{ ... }',
-                                    hintStyle: TextStyle(color: Colors.white24),
-                                  ),
-                                  validator: (value) {
-                                    if (!isNative) return null;
-                                    if ((value ?? '').trim().isEmpty) {
-                                      return '请输入原生交易 JSON';
-                                    }
-                                    try {
-                                      jsonDecode((value ?? '').trim());
-                                    } catch (_) {
-                                      return '原生交易 JSON 无法解析';
-                                    }
-                                    return null;
-                                  },
-                                )
-                              : TextFormField(
-                                  controller: _toController,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 34,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1,
-                                  ),
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: '0x... / ZER0x...',
-                                    hintStyle: TextStyle(color: Colors.white24),
-                                  ),
-                                  validator: (value) {
-                                    if (isNative) return null;
-                                    final address = (value ?? '').trim();
-                                    if (address.isEmpty) {
-                                      return '请输入目标地址';
-                                    }
-                                    final isEvm = RegExp(
-                                      r'^0x[a-fA-F0-9]{40}$',
-                                    ).hasMatch(address);
-                                    final isNativeAlias = RegExp(
-                                      r'^(ZER0x|ZERO|native1)[a-fA-F0-9]{40}$',
-                                    ).hasMatch(address);
-                                    if (!isEvm && !isNativeAlias) {
-                                      return '地址无效，仅支持 0x... 或 ZER0x...';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                          trailingLabel: isNative
-                              ? '下方密码用于签名 simulate / submit'
-                              : '发送前将校验地址类型与当前网络',
+                          title: '交易内容',
+                          badge: 'COMPUTE',
+                          bigChild: TextFormField(
+                            controller: _nativeJsonController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              height: 1.5,
+                            ),
+                            maxLines: 10,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: '{ ... }',
+                              hintStyle: TextStyle(color: Colors.white24),
+                            ),
+                            validator: (value) {
+                              if ((value ?? '').trim().isEmpty) {
+                                return '请输入原生交易 JSON';
+                              }
+                              try {
+                                jsonDecode((value ?? '').trim());
+                              } catch (_) {
+                                return '原生交易 JSON 无法解析';
+                              }
+                              return null;
+                            },
+                          ),
+                          trailingLabel: '下方密码用于签名 simulate / submit',
                         ),
                       ],
                     ),
@@ -288,65 +201,60 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  if (isNative)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: provider.isLoading
-                                ? null
-                                : () async {
-                                    _nativeJsonController.text = template;
-                                  },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.14),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: provider.isLoading
+                              ? null
+                              : () async {
+                                  _nativeJsonController.text = template;
+                                },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.14),
                             ),
-                            icon: const Icon(Icons.data_object_rounded),
-                            label: const Text(
-                              '填充模板',
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
                             ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          icon: const Icon(Icons.data_object_rounded),
+                          label: const Text(
+                            '填充模板',
+                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: provider.isLoading
-                                ? null
-                                : _simulateNative,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.14),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: provider.isLoading ? null : _simulateNative,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.14),
                             ),
-                            icon: const Icon(Icons.play_arrow_rounded),
-                            label: const Text(
-                              '模拟',
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
                             ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: const Text(
+                            '模拟',
+                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: provider.isLoading
-                          ? null
-                          : (isNative ? _submitNative : _sendEvm),
+                      onPressed: provider.isLoading ? null : _submitNative,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: WalletUi.lime,
                         foregroundColor: Colors.black,
@@ -367,11 +275,9 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                                 ),
                               ),
                             )
-                          : Text(
-                              isNative ? '签名并提交' : '签名并发送',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                              ),
+                          : const Text(
+                              '签名并提交',
+                              style: TextStyle(fontWeight: FontWeight.w800),
                             ),
                     ),
                   ),
@@ -436,157 +342,6 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
         );
       },
     );
-  }
-
-  Future<void> _sendEvm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    final provider = context.read<WalletProvider>();
-    final initialTo = _toController.text.trim();
-    var result = await provider.sendPayment(
-      toAddress: initialTo,
-      amountText: _amountController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (result.requiresMixedFormatConfirmation) {
-      final normalized = result.normalizedToAddress ?? initialTo;
-      final confirmed = await _confirmMixedAddressSend(
-        rawAddress: initialTo,
-        normalizedAddress: normalized,
-        networkName: provider.currentNetwork.name,
-      );
-      if (!confirmed) {
-        return;
-      }
-
-      result = await provider.sendPayment(
-        toAddress: initialTo,
-        amountText: _amountController.text.trim(),
-        password: _passwordController.text,
-        mixedFormatConfirmed: true,
-      );
-      if (!mounted) {
-        return;
-      }
-    }
-
-    if (!result.success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.error ?? '发送失败')));
-      return;
-    }
-
-    final txHash = result.txHash ?? '';
-    final confirmation = await provider.waitForTransactionConfirmation(txHash);
-    if (!mounted) {
-      return;
-    }
-
-    final confirmationText = switch (confirmation.state) {
-      TxConfirmationState.confirmed =>
-        'Status: Confirmed\nBlock: ${confirmation.blockNumber ?? '-'}',
-      TxConfirmationState.failed =>
-        'Status: Failed\n${confirmation.error ?? ''}',
-      TxConfirmationState.pending =>
-        'Status: Pending\n${confirmation.error ?? ''}',
-    };
-
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: WalletDarkCard(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '交易已发送',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Tx hash:\n$txHash\n\n$confirmationText',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.72),
-                    height: 1.45,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: WalletUi.lime,
-                      foregroundColor: Colors.black,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    child: const Text(
-                      '完成',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<bool> _confirmMixedAddressSend({
-    required String rawAddress,
-    required String normalizedAddress,
-    required String networkName,
-  }) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('确认地址格式混用'),
-          content: Text(
-            '检测到收款地址使用原生前缀，当前发送流程是 EVM(0x)。\n\n'
-            '网络: $networkName\n'
-            '原始输入: $rawAddress\n'
-            '发送目标: $normalizedAddress\n\n'
-            '请确认你理解此转换后再继续。',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('确认继续'),
-            ),
-          ],
-        );
-      },
-    );
-    return confirmed ?? false;
   }
 
   Future<void> _simulateNative() async {

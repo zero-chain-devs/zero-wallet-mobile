@@ -306,13 +306,13 @@ class _HomeTab extends StatelessWidget {
         'avatar': 'D',
       },
       {
-        'name': 'Ethereum',
-        'subtitle': '0 ETH',
+        'name': 'Compute Credit',
+        'subtitle': '0 CRED',
         'value': '\$0.00',
         'delta': '\$0.00',
         'positive': false,
         'color': const Color(0xFF94A3B8),
-        'avatar': 'E',
+        'avatar': 'C',
       },
       {
         'name': 'Bitcoin',
@@ -600,7 +600,7 @@ class _SwapTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNative = account.signatureScheme == SignatureScheme.ed25519;
-    final title = isNative ? '原生链' : 'EVM';
+    const title = '原生链';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -978,7 +978,7 @@ class _SettingsTab extends StatelessWidget {
                 _SelectionRow(
                   title: provider.accounts[index].name,
                   subtitle:
-                      '${provider.accounts[index].signatureScheme == SignatureScheme.ed25519 ? '原生链账户' : 'EVM 账户'} · ${walletShortAddress(provider.accounts[index].address)}',
+                      '原生链账户 · ${walletShortAddress(provider.accounts[index].address)}',
                   selected: provider.accounts[index].id == account.id,
                   onTap: () =>
                       provider.switchAccount(provider.accounts[index].id),
