@@ -12,7 +12,7 @@
 ## 2. 已确认的链侧事实
 
 1. ZeroChain 同时支持 `secp256k1` 与 `ed25519` 两类账户。
-2. `ed25519` 原生地址不是 ETH 地址，而是 `native1` + `keccak256(public_key_32)` 的后 20 字节。
+2. `ed25519` 原生地址不是 ETH 地址，而是 `ZERO` + `keccak256(public_key_32)` 后 20 字节（按 ETH 风格 checksum 大小写编码）。
 3. 原生 compute 交易有正式 RPC：
    - `zero_simulateComputeTx`
    - `zero_submitComputeTx`

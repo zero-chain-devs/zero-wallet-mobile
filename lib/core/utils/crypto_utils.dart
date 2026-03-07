@@ -28,6 +28,8 @@ class DerivedWalletData {
 class CryptoUtils {
   CryptoUtils._();
 
+  static const String nativeAddressPrefix = 'ZERO';
+
   static final Cipher _cipher = AesGcm.with256bits();
   static final Pbkdf2 _pbkdf2 = Pbkdf2.hmacSha256(
     iterations: AppConstants.pbkdf2Iterations,
@@ -115,7 +117,7 @@ class CryptoUtils {
         return DerivedWalletData(
           privateKey: hex.encode(bytes),
           publicKey: hex.encode(publicKeyBytes),
-          address: 'native1${hex.encode(addressRaw)}',
+          address: _formatNativeAddress(addressRaw),
           signatureScheme: SignatureScheme.ed25519,
         );
     }
@@ -218,5 +220,31 @@ class CryptoUtils {
 
   static String _normalizeMnemonic(String mnemonic) {
     return mnemonic.trim().toLowerCase().split(RegExp(r'\s+')).join(' ');
+  }
+
+  static String _formatNativeAddress(List<int> rawAddress) {
+    if (rawAddress.length != 20) {
+      throw ArgumentError('Native address body must be 20 bytes');
+    }
+
+    final lowerHex = hex.encode(rawAddress);
+    final hash = KeccakDigest(
+      256,
+    ).process(Uint8List.fromList(utf8.encode(lowerHex)));
+
+    final checksummed = StringBuffer();
+    for (var i = 0; i < lowerHex.length; i++) {
+      final ch = lowerHex.codeUnitAt(i);
+      final hashByte = hash[i ~/ 2];
+      final nibble = i.isEven ? (hashByte >> 4) & 0x0f : hashByte & 0x0f;
+      final isHexLetter = ch >= 0x61 && ch <= 0x66;
+      if (isHexLetter && nibble >= 8) {
+        checksummed.writeCharCode(ch - 32);
+      } else {
+        checksummed.writeCharCode(ch);
+      }
+    }
+
+    return '$nativeAddressPrefix$checksummed';
   }
 }
