@@ -76,4 +76,3 @@ app.*.map.json
 
 # Local Flutter metadata / non-mobile scaffold
 .metadata
-linux/
