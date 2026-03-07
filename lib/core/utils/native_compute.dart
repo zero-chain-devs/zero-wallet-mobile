@@ -53,9 +53,20 @@ class NativeCompute {
           'predecessor': null,
           'version': 1,
           'state': '0x01',
+          'state_root': null,
+          'resources': <Map<String, dynamic>>[],
+          'lock': <String, dynamic>{'vm': 1, 'code': '0x'},
           'logic': null,
+          'created_at': 0,
+          'ttl': null,
+          'rent_reserve': null,
+          'flags': 0,
+          'extensions': <Map<String, dynamic>>[],
         },
       ],
+      'fee': 0,
+      'nonce': null,
+      'metadata': <Map<String, dynamic>>[],
       'payload': '0x',
       'deadline_unix_secs': null,
       'chain_id': chainId,
@@ -129,6 +140,9 @@ class NativeCompute {
       'output_proposals': _asList(
         input['output_proposals'],
       ).map((item) => _normalizeOutputProposal(_asMap(item))).toList(),
+      'fee': _readInt(input['fee'], fallback: 0),
+      'nonce': _readNullableInt(input['nonce']),
+      'metadata': _normalizeMetadata(input['metadata']),
       'payload': _normalizeHexData(input['payload']?.toString() ?? '0x'),
       'deadline_unix_secs': _readNullableInt(input['deadline_unix_secs']),
       'chain_id': _readNullableInt(input['chain_id']),
@@ -181,11 +195,7 @@ class NativeCompute {
       );
       _appendU32(out, _readInt(proposal['domain_id']));
       out.add(_objectKindTag(proposal['kind'] as String));
-      _encodeOwnership(
-        out,
-        proposal['owner'] as Map<String, dynamic>? ??
-            <String, dynamic>{'type': 'Shared'},
-      );
+      _encodeOwnership(out, _asMap(proposal['owner']));
 
       if (proposal['predecessor'] != null) {
         out.add(1);
@@ -204,14 +214,40 @@ class NativeCompute {
       _appendU64(out, _readInt(proposal['version']));
       _encodeBytes(out, _hexToBytes(proposal['state']?.toString() ?? '0x'));
 
-      if (proposal['logic'] != null) {
+      if (proposal['state_root'] != null) {
         out.add(1);
-        _encodeBytes(out, _hexToBytes(proposal['logic'].toString()));
+        _appendBytes(
+          out,
+          _fixedHexBytes(proposal['state_root'].toString(), 32, '32-byte hash'),
+        );
       } else {
         out.add(0);
       }
+
+      _encodeResourceMap(out, _asList(proposal['resources']));
+      _encodeScript(out, _normalizeScript(proposal['lock'], fallbackToDefault: true)!);
+
+      final logicScript = _normalizeScript(
+        proposal['logic'],
+        fallbackToDefault: false,
+      );
+      if (logicScript != null) {
+        out.add(1);
+        _encodeScript(out, logicScript);
+      } else {
+        out.add(0);
+      }
+
+      _appendU64(out, _readInt(proposal['created_at'], fallback: 0));
+      _encodeOptionalU64(out, _readNullableInt(proposal['ttl']));
+      _encodeOptionalU128(out, _readNullableBigInt(proposal['rent_reserve']));
+      _appendU32(out, _readInt(proposal['flags'], fallback: 0));
+      _encodeMetadata(out, _asList(proposal['extensions']));
     }
 
+    _appendU64(out, _readInt(tx['fee'], fallback: 0));
+    _encodeOptionalU64(out, _readNullableInt(tx['nonce']));
+    _encodeMetadata(out, _asList(tx['metadata']));
     _encodeBytes(out, _hexToBytes(tx['payload']?.toString() ?? '0x'));
     _encodeOptionalU64(out, _readNullableInt(tx['deadline_unix_secs']));
     _encodeOptionalU64(out, _readNullableInt(tx['chain_id']));
@@ -246,7 +282,7 @@ class NativeCompute {
     Map<String, dynamic> item,
   ) {
     final predecessorRaw = item['predecessor'];
-    final logicRaw = item['logic'];
+    final stateRootRaw = item['state_root'];
     return <String, dynamic>{
       'output_id': _normalizeHash32(item['output_id'].toString()),
       'object_id': _normalizeHash32(item['object_id'].toString()),
@@ -259,17 +295,22 @@ class NativeCompute {
           : _normalizeHash32(predecessorRaw.toString()),
       'version': _readInt(item['version']),
       'state': _normalizeHexData(item['state']?.toString() ?? '0x'),
-      'logic': logicRaw == null || logicRaw.toString().trim().isEmpty
+      'state_root':
+          stateRootRaw == null || stateRootRaw.toString().trim().isEmpty
           ? null
-          : _normalizeHexData(logicRaw.toString()),
+          : _normalizeHash32(stateRootRaw.toString()),
+      'resources': _normalizeResources(item['resources']),
+      'lock': _normalizeScript(item['lock'], fallbackToDefault: true),
+      'logic': _normalizeScript(item['logic'], fallbackToDefault: false),
+      'created_at': _readInt(item['created_at'], fallback: 0),
+      'ttl': _readNullableInt(item['ttl']),
+      'rent_reserve': _readNullableBigInt(item['rent_reserve'])?.toString(),
+      'flags': _readInt(item['flags'], fallback: 0),
+      'extensions': _normalizeMetadata(item['extensions']),
     };
   }
 
-  static Map<String, dynamic>? _normalizeOwner(dynamic value) {
-    if (value == null) {
-      return null;
-    }
-
+  static Map<String, dynamic> _normalizeOwner(dynamic value) {
     final owner = _asMap(value);
     final type = owner['type']?.toString() ?? 'Shared';
     switch (type) {
@@ -289,6 +330,96 @@ class NativeCompute {
       default:
         throw ArgumentError('Unsupported owner type: $type');
     }
+  }
+
+  static List<Map<String, dynamic>> _normalizeResources(dynamic value) {
+    final resources = _asList(value)
+        .map((item) => _asMap(item))
+        .map((item) => <String, dynamic>{
+              'asset_id': _normalizeHash32(item['asset_id'].toString()),
+              'value': _normalizeResourceValue(_asMap(item['value'])),
+            })
+        .toList();
+    resources.sort((left, right) {
+      final leftBytes = _hexToBytes(left['asset_id'].toString());
+      final rightBytes = _hexToBytes(right['asset_id'].toString());
+      for (var index = 0; index < leftBytes.length; index += 1) {
+        final diff = leftBytes[index].compareTo(rightBytes[index]);
+        if (diff != 0) {
+          return diff;
+        }
+      }
+      return 0;
+    });
+    return resources;
+  }
+
+  static Map<String, dynamic> _normalizeResourceValue(Map<String, dynamic> value) {
+    final type = value['type']?.toString() ?? '';
+    switch (type) {
+      case 'Amount':
+        return <String, dynamic>{
+          'type': 'Amount',
+          'amount': _readBigInt(value['amount']).toString(),
+        };
+      case 'Data':
+        return <String, dynamic>{
+          'type': 'Data',
+          'data': _normalizeHexData(value['data']?.toString() ?? '0x'),
+        };
+      case 'Ref':
+        return <String, dynamic>{
+          'type': 'Ref',
+          'object_id': _normalizeHash32(value['object_id'].toString()),
+        };
+      case 'RefBatch':
+        return <String, dynamic>{
+          'type': 'RefBatch',
+          'object_ids': _asList(value['object_ids'])
+              .map((item) => _normalizeHash32(item.toString()))
+              .toList(),
+        };
+      default:
+        throw ArgumentError('Unsupported resource value type: $type');
+    }
+  }
+
+  static Map<String, dynamic>? _normalizeScript(
+    dynamic value, {
+    required bool fallbackToDefault,
+  }) {
+    if (value == null) {
+      if (!fallbackToDefault) {
+        return null;
+      }
+      return <String, dynamic>{'vm': 1, 'code': '0x'};
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        if (!fallbackToDefault) {
+          return null;
+        }
+        return <String, dynamic>{'vm': 1, 'code': '0x'};
+      }
+      return <String, dynamic>{'vm': 1, 'code': _normalizeHexData(trimmed)};
+    }
+
+    final script = _asMap(value);
+    return <String, dynamic>{
+      'vm': _readInt(script['vm'], fallback: 1),
+      'code': _normalizeHexData(script['code']?.toString() ?? '0x'),
+    };
+  }
+
+  static List<Map<String, dynamic>> _normalizeMetadata(dynamic value) {
+    return _asList(value)
+        .map((item) => _asMap(item))
+        .map((item) => <String, dynamic>{
+              'key': item['key']?.toString() ?? '',
+              'value': _normalizeHexData(item['value']?.toString() ?? '0x'),
+            })
+        .toList();
   }
 
   static String _normalizeCommand(dynamic value) {
@@ -350,7 +481,8 @@ class NativeCompute {
   }
 
   static void _encodeOwnership(List<int> out, Map<String, dynamic> owner) {
-    switch (owner['type']) {
+    final type = owner['type']?.toString() ?? 'Shared';
+    switch (type) {
       case 'Address':
         out.add(1);
         _appendBytes(
@@ -380,7 +512,83 @@ class NativeCompute {
         );
         return;
       default:
-        throw ArgumentError('Unsupported owner type: ${owner['type']}');
+        throw ArgumentError('Unsupported owner type: $type');
+    }
+  }
+
+  static void _encodeResourceMap(List<int> out, List<dynamic> resources) {
+    final normalizedResources = resources.map((value) => _asMap(value)).toList();
+    normalizedResources.sort((left, right) {
+      final leftBytes = _hexToBytes(left['asset_id'].toString());
+      final rightBytes = _hexToBytes(right['asset_id'].toString());
+      for (var index = 0; index < leftBytes.length; index += 1) {
+        final diff = leftBytes[index].compareTo(rightBytes[index]);
+        if (diff != 0) {
+          return diff;
+        }
+      }
+      return 0;
+    });
+
+    _appendU32(out, normalizedResources.length);
+    for (final resource in normalizedResources) {
+      final resourceValue = _asMap(resource['value']);
+      _appendBytes(
+        out,
+        _fixedHexBytes(resource['asset_id'].toString(), 32, '32-byte hash'),
+      );
+      final valueType = resourceValue['type']?.toString() ?? '';
+      switch (valueType) {
+        case 'Amount':
+          out.add(1);
+          _appendU128(out, _readBigInt(resourceValue['amount']));
+          break;
+        case 'Data':
+          out.add(2);
+          _encodeBytes(out, _hexToBytes(resourceValue['data']?.toString() ?? '0x'));
+          break;
+        case 'Ref':
+          out.add(3);
+          _appendBytes(
+            out,
+            _fixedHexBytes(
+              resourceValue['object_id'].toString(),
+              32,
+              '32-byte hash',
+            ),
+          );
+          break;
+        case 'RefBatch':
+          out.add(4);
+          final objectIds = _asList(resourceValue['object_ids']);
+          _appendU32(out, objectIds.length);
+          for (final objectId in objectIds) {
+            _appendBytes(
+              out,
+              _fixedHexBytes(objectId.toString(), 32, '32-byte hash'),
+            );
+          }
+          break;
+        default:
+          throw ArgumentError('Unsupported resource value type: $valueType');
+      }
+    }
+  }
+
+  static void _encodeScript(List<int> out, Map<String, dynamic> script) {
+    out.add(_readInt(script['vm'], fallback: 1) & 0xff);
+    _encodeBytes(out, _hexToBytes(script['code']?.toString() ?? '0x'));
+  }
+
+  static void _encodeMetadata(List<int> out, List<dynamic> metadata) {
+    _appendU32(out, metadata.length);
+    for (final item in metadata) {
+      final entry = _asMap(item);
+      _encodeBytes(
+        out,
+        Uint8List.fromList(utf8.encode(entry['key']?.toString() ?? '')),
+      );
+      _encodeBytes(out, _hexToBytes(entry['value']?.toString() ?? '0x'));
     }
   }
 
@@ -397,6 +605,16 @@ class NativeCompute {
 
     out.add(1);
     _appendU64(out, value);
+  }
+
+  static void _encodeOptionalU128(List<int> out, BigInt? value) {
+    if (value == null) {
+      out.add(0);
+      return;
+    }
+
+    out.add(1);
+    _appendU128(out, value);
   }
 
   static void _encodeOptionalU32(List<int> out, int? value) {
@@ -431,6 +649,19 @@ class NativeCompute {
     var bigint = BigInt.from(value);
     final bytes = Uint8List(8);
     for (var index = 7; index >= 0; index -= 1) {
+      bytes[index] = (bigint & BigInt.from(0xff)).toInt();
+      bigint = bigint >> 8;
+    }
+    _appendBytes(out, bytes);
+  }
+
+  static void _appendU128(List<int> out, BigInt value) {
+    if (value < BigInt.zero || value.bitLength > 128) {
+      throw ArgumentError('u128 overflow');
+    }
+    var bigint = value;
+    final bytes = Uint8List(16);
+    for (var index = 15; index >= 0; index -= 1) {
       bytes[index] = (bigint & BigInt.from(0xff)).toInt();
       bigint = bigint >> 8;
     }
@@ -520,10 +751,27 @@ class NativeCompute {
     if (value is num) {
       return value.toInt();
     }
+    if (value is BigInt) {
+      return value.toInt();
+    }
     if (value is String) {
-      final parsed = int.tryParse(value);
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        throw ArgumentError('Expected integer value');
+      }
+      if (trimmed.startsWith('0x') || trimmed.startsWith('0X')) {
+        final parsedHex = BigInt.tryParse(trimmed.substring(2), radix: 16);
+        if (parsedHex != null) {
+          return parsedHex.toInt();
+        }
+      }
+      final parsed = int.tryParse(trimmed);
       if (parsed != null) {
         return parsed;
+      }
+      final parsedBig = BigInt.tryParse(trimmed);
+      if (parsedBig != null) {
+        return parsedBig.toInt();
       }
     }
     throw ArgumentError('Expected integer value');
@@ -534,5 +782,47 @@ class NativeCompute {
       return null;
     }
     return _readInt(value);
+  }
+
+  static BigInt _readBigInt(dynamic value, {BigInt? fallback}) {
+    if (value == null) {
+      if (fallback != null) {
+        return fallback;
+      }
+      throw ArgumentError('Expected integer value');
+    }
+    if (value is BigInt) {
+      return value;
+    }
+    if (value is int) {
+      return BigInt.from(value);
+    }
+    if (value is num) {
+      return BigInt.from(value.toInt());
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        throw ArgumentError('Expected integer value');
+      }
+      if (trimmed.startsWith('0x') || trimmed.startsWith('0X')) {
+        final parsedHex = BigInt.tryParse(trimmed.substring(2), radix: 16);
+        if (parsedHex != null) {
+          return parsedHex;
+        }
+      }
+      final parsed = BigInt.tryParse(trimmed);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+    throw ArgumentError('Expected integer value');
+  }
+
+  static BigInt? _readNullableBigInt(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    return _readBigInt(value);
   }
 }
