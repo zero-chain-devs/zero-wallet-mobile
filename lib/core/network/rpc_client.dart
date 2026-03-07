@@ -21,10 +21,10 @@ class ZeroChainRpcClient {
     _dio.interceptors.add(
       LogInterceptor(
         request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: true,
-        responseBody: true,
+        requestHeader: false,
+        requestBody: false,
+        responseHeader: false,
+        responseBody: false,
         error: true,
         logPrint: (obj) => AppLogger.debug(obj.toString()),
       ),
@@ -54,9 +54,15 @@ class ZeroChainRpcClient {
     final payload = response.data as Map<String, dynamic>;
     if (payload.containsKey('error')) {
       final error = payload['error'] as Map<String, dynamic>;
+      final code = error['code'] as int? ?? -32000;
+      var message = error['message'] as String? ?? 'Unknown error';
+      if (code == -32010 && method == 'eth_sendRawTransaction') {
+        message =
+            '节点默认关闭 eth_sendRawTransaction，请以 --rpc-enable-eth-write-rpcs 启动节点（仅建议开发环境）。';
+      }
       throw RpcException(
-        code: error['code'] as int? ?? -32000,
-        message: error['message'] as String? ?? 'Unknown error',
+        code: code,
+        message: message,
       );
     }
 
