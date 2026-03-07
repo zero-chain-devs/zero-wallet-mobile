@@ -73,3 +73,7 @@ app.*.map.json
 
 # IDE and local workspace files
 .vscode/
+
+# Local Flutter metadata / non-mobile scaffold
+.metadata
+linux/
