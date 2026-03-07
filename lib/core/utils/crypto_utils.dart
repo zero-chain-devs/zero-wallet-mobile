@@ -112,12 +112,10 @@ class CryptoUtils {
         final keyPair = await ed.newKeyPairFromSeed(bytes);
         final publicKey = await keyPair.extractPublicKey();
         final publicKeyBytes = Uint8List.fromList(publicKey.bytes);
-        final digest = KeccakDigest(256).process(publicKeyBytes);
-        final addressRaw = digest.sublist(digest.length - 20);
         return DerivedWalletData(
           privateKey: hex.encode(bytes),
           publicKey: hex.encode(publicKeyBytes),
-          address: _formatNativeAddress(addressRaw),
+          address: formatNativeAddressFromPublicKey(hex.encode(publicKeyBytes)),
           signatureScheme: SignatureScheme.ed25519,
         );
     }
@@ -220,6 +218,16 @@ class CryptoUtils {
 
   static String _normalizeMnemonic(String mnemonic) {
     return mnemonic.trim().toLowerCase().split(RegExp(r'\s+')).join(' ');
+  }
+
+  static String formatNativeAddressFromPublicKey(String publicKeyHex) {
+    final publicKeyBytes = hexToBytes(publicKeyHex);
+    if (publicKeyBytes.length != 32) {
+      throw ArgumentError('Native public key must be 32 bytes');
+    }
+    final digest = KeccakDigest(256).process(publicKeyBytes);
+    final addressRaw = digest.sublist(digest.length - 20);
+    return _formatNativeAddress(addressRaw);
   }
 
   static String _formatNativeAddress(List<int> rawAddress) {

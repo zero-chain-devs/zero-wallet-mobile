@@ -67,6 +67,7 @@ class WalletProvider extends ChangeNotifier {
                 Map<String, dynamic>.from(item as Map),
               ),
             )
+            .map(_normalizeAccountAddress)
             .toList();
       } else {
         _accounts = <WalletAccount>[];
@@ -780,6 +781,21 @@ class WalletProvider extends ChangeNotifier {
               account.copyWith(isCurrent: account.id == currentAccountId),
         )
         .toList();
+  }
+
+  WalletAccount _normalizeAccountAddress(WalletAccount account) {
+    if (account.signatureScheme != SignatureScheme.ed25519) {
+      return account;
+    }
+
+    try {
+      final normalized = CryptoUtils.formatNativeAddressFromPublicKey(
+        account.publicKey,
+      );
+      return account.copyWith(address: normalized);
+    } catch (_) {
+      return account;
+    }
   }
 
   Future<void> _persistAccounts() async {
