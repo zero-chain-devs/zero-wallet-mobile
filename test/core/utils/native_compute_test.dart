@@ -28,6 +28,20 @@ void main() {
       },
     );
 
+    test('defaultTemplate falls back to a zeroed public key when empty', () {
+      final template = NativeCompute.defaultTemplate(
+        publicKey: '',
+        chainId: 10086,
+        networkId: 9,
+      );
+      final outputs = template['output_proposals'] as List<dynamic>;
+      final firstOutput = outputs.first as Map<String, dynamic>;
+      final owner = firstOutput['owner'] as Map<String, dynamic>;
+
+      expect(owner['public_key'], '0x${repeatHex('00')}');
+      expect(template['network_id'], 9);
+    });
+
     test('buildUnsignedTransaction sorts resources and normalizes payload', () {
       final unsigned = NativeCompute.buildUnsignedTransaction(<String, dynamic>{
         'domain_id': 0,
