@@ -125,5 +125,44 @@ void main() {
         isNotEmpty,
       );
     });
+
+    testWidgets('switches bottom tabs and shows each tab headline', (
+      WidgetTester tester,
+    ) async {
+      final provider = TestWalletProvider();
+
+      tester.view.physicalSize = const Size(430, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(_wrap(provider));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('代币'), findsOneWidget);
+
+      await tester.tap(find.text('发现').last);
+      await tester.pumpAndSettle();
+      expect(find.text('流行代币'), findsOneWidget);
+      expect(find.text('流行永续合约'), findsOneWidget);
+
+      await tester.tap(find.text('兑换').last);
+      await tester.pumpAndSettle();
+      expect(find.text('打开原生交易页'), findsOneWidget);
+      expect(find.text('支付'), findsWidgets);
+
+      await tester.tap(find.text('最近').last);
+      await tester.pumpAndSettle();
+      expect(find.text('热门'), findsOneWidget);
+      expect(find.text('尚无可显示的聊天。'), findsOneWidget);
+
+      await tester.tap(find.text('设置').last);
+      await tester.pumpAndSettle();
+      expect(find.text('账户切换'), findsOneWidget);
+      expect(find.text('网络'), findsOneWidget);
+    });
   });
 }
