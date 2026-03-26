@@ -23,7 +23,7 @@ void main() {
         expect(template['network_id'], 1);
         expect(firstOutput['output_id'], matches(RegExp(r'^0x[a-f0-9]{64}$')));
         expect(firstOutput['object_id'], matches(RegExp(r'^0x[a-f0-9]{64}$')));
-        expect(owner['type'], 'NativeEd25519');
+        expect(owner['type'], 'Ed25519');
         expect(owner['public_key'], publicKey);
       },
     );
@@ -103,7 +103,7 @@ void main() {
                 'domain_id': 0,
                 'kind': 'State',
                 'owner': <String, dynamic>{
-                  'type': 'NativeEd25519',
+                  'type': 'Ed25519',
                   'public_key': wallet.publicKey,
                 },
                 'version': 1,

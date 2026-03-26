@@ -47,7 +47,7 @@ class ComputeTx {
           'domain_id': 0,
           'kind': 'State',
           'owner': <String, dynamic>{
-            'type': 'NativeEd25519',
+            'type': 'Ed25519',
             'public_key': publicKey.isEmpty ? '0x${'00' * 32}' : publicKey,
           },
           'predecessor': null,
@@ -322,7 +322,7 @@ class ComputeTx {
           'type': type,
           'address': _normalizeAddress20(owner['address'].toString()),
         };
-      case 'NativeEd25519':
+      case 'Ed25519':
         return <String, dynamic>{
           'type': type,
           'public_key': _normalizePublicKey32(owner['public_key'].toString()),
@@ -500,7 +500,7 @@ class ComputeTx {
       case 'Shared':
         out.add(3);
         return;
-      case 'NativeEd25519':
+      case 'Ed25519':
         out.add(4);
         _appendBytes(
           out,
