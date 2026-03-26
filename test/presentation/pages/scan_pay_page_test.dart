@@ -129,7 +129,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('原生交易'), findsOneWidget);
+      expect(find.text('Compute 交易'), findsOneWidget);
       expect(find.text('交易内容'), findsOneWidget);
       expect(find.text('支付'), findsOneWidget);
     });

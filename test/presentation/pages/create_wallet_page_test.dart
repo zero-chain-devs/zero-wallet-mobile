@@ -66,7 +66,7 @@ class TestWalletProvider extends WalletProvider {
       success: true,
       account: _currentAccount,
       backupValue: '0xabc123',
-      backupTitle: '请备份原生私钥',
+      backupTitle: '请备份 ed25519 私钥',
       backupDescription: '测试用备份提示',
     );
   }
@@ -146,7 +146,7 @@ void main() {
       expect(provider.createCalls, 1);
       expect(provider.lastName, 'primary-wallet');
       expect(provider.lastPassword, 'StrongPass123');
-      expect(find.text('请备份原生私钥'), findsOneWidget);
+      expect(find.text('请备份 ed25519 私钥'), findsOneWidget);
       expect(find.text('测试用备份提示'), findsOneWidget);
       expect(find.text('0xabc123'), findsOneWidget);
 

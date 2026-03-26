@@ -286,12 +286,12 @@ class _HomeTab extends StatelessWidget {
         : '\$${provider.currentBalance?.balanceFormatted ?? "0.00"}';
     final assetRows = <Map<String, Object>>[
       {
-        'name': isNative ? 'Zero Native' : 'Solana',
+        'name': isNative ? 'Zero Compute' : 'Solana',
         'subtitle': isNative
-            ? 'native compute account'
+            ? 'compute account'
             : '${provider.currentBalance?.balanceFormatted ?? '0'} ${provider.currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}',
         'value': balanceText,
-        'delta': isNative ? 'native compute' : '-\$0.12',
+        'delta': isNative ? 'compute tx' : '-\$0.12',
         'positive': isNative,
         'color': const Color(0xFF6D5BFF),
         'avatar': isNative ? 'ZN' : 'S',
@@ -600,7 +600,7 @@ class _SwapTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNative = account.signatureScheme == SignatureScheme.ed25519;
-    const title = '原生链';
+    const title = 'ZeroChain';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -659,7 +659,7 @@ class _SwapTab extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    isNative ? '打开原生交易页' : '打开发送页',
+                    isNative ? '打开 Compute 交易页' : '打开发送页',
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -978,7 +978,7 @@ class _SettingsTab extends StatelessWidget {
                 _SelectionRow(
                   title: provider.accounts[index].name,
                   subtitle:
-                      '原生链账户 · ${walletShortAddress(provider.accounts[index].address)}',
+                      'ZeroChain 账户 · ${walletShortAddress(provider.accounts[index].address)}',
                   selected: provider.accounts[index].id == account.id,
                   onTap: () =>
                       provider.switchAccount(provider.accounts[index].id),

@@ -50,14 +50,14 @@ class TestWalletProvider extends WalletProvider {
   String? get error => _error;
 
   @override
-  Future<NativeComputeActionResult> simulateNativeComputeTx({
+  Future<ComputeTxActionResult> simulateComputeTx({
     required String jsonText,
     required String password,
   }) async {
     simulateCalls += 1;
     lastJsonText = jsonText;
     lastPassword = password;
-    return NativeComputeActionResult(
+    return ComputeTxActionResult(
       success: true,
       signedTx: <String, dynamic>{'txId': '0xabc'},
       result: <String, dynamic>{'ok': true},

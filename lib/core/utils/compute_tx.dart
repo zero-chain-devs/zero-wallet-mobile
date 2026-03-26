@@ -7,8 +7,8 @@ import 'package:pointycastle/digests/keccak.dart';
 
 import 'crypto_utils.dart';
 
-class NativeCompute {
-  NativeCompute._();
+class ComputeTx {
+  ComputeTx._();
 
   static const List<String> commands = <String>[
     'Transfer',

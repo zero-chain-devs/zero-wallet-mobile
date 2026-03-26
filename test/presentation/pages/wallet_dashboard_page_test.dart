@@ -151,7 +151,7 @@ void main() {
 
       await tester.tap(find.text('兑换').last);
       await tester.pumpAndSettle();
-      expect(find.text('打开原生交易页'), findsOneWidget);
+      expect(find.text('打开 Compute 交易页'), findsOneWidget);
       expect(find.text('支付'), findsWidgets);
 
       await tester.tap(find.text('最近').last);

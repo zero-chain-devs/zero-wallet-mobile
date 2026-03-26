@@ -94,7 +94,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           child: Row(
                             children: [
                               WalletChoicePill(
-                                label: '原生私钥',
+                                label: 'ed25519 私钥',
                                 active: true,
                                 onTap: () {},
                               ),
@@ -113,7 +113,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           style: const TextStyle(color: Colors.white),
                           decoration: WalletUi.inputDecoration(
                             label: '账户名称',
-                            hint: 'native-1',
+                            hint: 'ed25519-1',
                             prefixIcon: const Icon(
                               Icons.person_outline_rounded,
                               color: Colors.white54,
@@ -132,7 +132,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           style: const TextStyle(color: Colors.white),
                           maxLines: 3,
                           decoration: WalletUi.inputDecoration(
-                            label: '原生私钥',
+                            label: 'ed25519 私钥',
                             hint: '输入 32 字节 hex 私钥',
                             prefixIcon: const Icon(
                               Icons.vpn_key_outlined,
@@ -143,7 +143,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           validator: (value) {
                             final input = (value ?? '').trim();
                             if (input.isEmpty) {
-                              return '请输入原生私钥';
+                              return '请输入 ed25519 私钥';
                             }
                             final normalized = input.startsWith('0x')
                                 ? input.substring(2)

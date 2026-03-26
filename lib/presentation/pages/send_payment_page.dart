@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/utils/native_compute.dart';
+import '../../core/utils/compute_tx.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/wallet_ui.dart';
 
@@ -21,14 +21,14 @@ class SendPaymentPage extends StatefulWidget {
 class _SendPaymentPageState extends State<SendPaymentPage> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
-  final _nativeJsonController = TextEditingController();
+  final _computeJsonController = TextEditingController();
   bool _obscurePassword = true;
-  String? _nativeResult;
+  String? _computeResult;
 
   @override
   void dispose() {
     _passwordController.dispose();
-    _nativeJsonController.dispose();
+    _computeJsonController.dispose();
     super.dispose();
   }
 
@@ -37,14 +37,14 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
     return Consumer<WalletProvider>(
       builder: (context, provider, _) {
         final account = provider.currentAccount;
-        final template = NativeCompute.prettyTemplate(
+        final template = ComputeTx.prettyTemplate(
           publicKey: account?.publicKey ?? '',
           chainId: provider.currentNetwork.chainId,
           networkId: provider.currentNetwork.networkId,
         );
 
-        if (_nativeJsonController.text.isEmpty) {
-          _nativeJsonController.text = template;
+        if (_computeJsonController.text.isEmpty) {
+          _computeJsonController.text = template;
         }
 
         return Scaffold(
@@ -71,7 +71,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                               ),
                             ),
                             const Text(
-                              '原生交易',
+                              'Compute 交易',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 34,
@@ -107,7 +107,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                       children: [
                         _SwapPanel(
                           title: '支付',
-                          badge: 'NATIVE',
+                          badge: 'COMPUTE',
                           bigChild: const Text(
                             '0',
                             style: TextStyle(
@@ -117,7 +117,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                               height: 1,
                             ),
                           ),
-                          trailingLabel: '原生 compute preimage',
+                          trailingLabel: 'compute signing preimage',
                         ),
                         const SizedBox(height: 10),
                         Center(
@@ -139,7 +139,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                           title: '交易内容',
                           badge: 'COMPUTE',
                           bigChild: TextFormField(
-                            controller: _nativeJsonController,
+                            controller: _computeJsonController,
                             style: const TextStyle(
                               color: Colors.white,
                               fontFamily: 'monospace',
@@ -154,12 +154,12 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                             ),
                             validator: (value) {
                               if ((value ?? '').trim().isEmpty) {
-                                return '请输入原生交易 JSON';
+                                return '请输入 Compute 交易 JSON';
                               }
                               try {
                                 jsonDecode((value ?? '').trim());
                               } catch (_) {
-                                return '原生交易 JSON 无法解析';
+                                return 'Compute 交易 JSON 无法解析';
                               }
                               return null;
                             },
@@ -208,7 +208,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                           onPressed: provider.isLoading
                               ? null
                               : () async {
-                                  _nativeJsonController.text = template;
+                                  _computeJsonController.text = template;
                                 },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
@@ -230,7 +230,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: provider.isLoading ? null : _simulateNative,
+                          onPressed: provider.isLoading ? null : _simulateCompute,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: BorderSide(
@@ -254,7 +254,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: provider.isLoading ? null : _submitNative,
+                      onPressed: provider.isLoading ? null : _submitCompute,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: WalletUi.lime,
                         foregroundColor: Colors.black,
@@ -281,7 +281,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                             ),
                     ),
                   ),
-                  if ((_nativeResult ?? '').isNotEmpty) ...[
+                  if ((_computeResult ?? '').isNotEmpty) ...[
                     const SizedBox(height: 16),
                     WalletDarkCard(
                       child: Column(
@@ -301,7 +301,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                               TextButton.icon(
                                 onPressed: () async {
                                   await Clipboard.setData(
-                                    ClipboardData(text: _nativeResult!),
+                                    ClipboardData(text: _computeResult!),
                                   );
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -322,7 +322,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: SelectableText(
-                              _nativeResult!,
+                              _computeResult!,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontFamily: 'monospace',
@@ -344,27 +344,27 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
     );
   }
 
-  Future<void> _simulateNative() async {
-    await _runNative(submit: false);
+  Future<void> _simulateCompute() async {
+    await _runCompute(submit: false);
   }
 
-  Future<void> _submitNative() async {
-    await _runNative(submit: true);
+  Future<void> _submitCompute() async {
+    await _runCompute(submit: true);
   }
 
-  Future<void> _runNative({required bool submit}) async {
+  Future<void> _runCompute({required bool submit}) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     final provider = context.read<WalletProvider>();
     final result = submit
-        ? await provider.submitNativeComputeTx(
-            jsonText: _nativeJsonController.text.trim(),
+        ? await provider.submitComputeTx(
+            jsonText: _computeJsonController.text.trim(),
             password: _passwordController.text,
           )
-        : await provider.simulateNativeComputeTx(
-            jsonText: _nativeJsonController.text.trim(),
+        : await provider.simulateComputeTx(
+            jsonText: _computeJsonController.text.trim(),
             password: _passwordController.text,
           );
 
@@ -375,7 +375,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
     if (!result.success) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(result.error ?? '原生计算交易失败')));
+      ).showSnackBar(SnackBar(content: Text(result.error ?? 'Compute 交易失败')));
       return;
     }
 
@@ -384,7 +384,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
       'result': result.result,
     });
     setState(() {
-      _nativeResult = pretty;
+      _computeResult = pretty;
     });
   }
 }

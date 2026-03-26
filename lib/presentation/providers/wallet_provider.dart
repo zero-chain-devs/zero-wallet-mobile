@@ -8,7 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/network/rpc_client.dart';
 import '../../core/utils/crypto_utils.dart';
 import '../../core/utils/logger.dart';
-import '../../core/utils/native_compute.dart';
+import '../../core/utils/compute_tx.dart';
 import '../../data/models/wallet_models.dart';
 
 /// Wallet state management provider
@@ -105,7 +105,7 @@ class WalletProvider extends ChangeNotifier {
       if (signatureScheme != SignatureScheme.ed25519) {
         return CreateWalletResult(
           success: false,
-          error: 'Only native ed25519 wallet is supported',
+          error: 'Only ed25519 wallet is supported',
         );
       }
 
@@ -144,14 +144,14 @@ class WalletProvider extends ChangeNotifier {
       await refreshBalance();
       _error = null;
 
-      return CreateWalletResult(
-        success: true,
-        account: _currentAccount,
-        backupValue: normalizedPrivateKey,
-        backupTitle: 'Backup Your Native Private Key',
-        backupDescription:
-            'This ed25519 private key restores your ZeroChain native account.',
-      );
+        return CreateWalletResult(
+          success: true,
+          account: _currentAccount,
+          backupValue: normalizedPrivateKey,
+          backupTitle: '请备份 ed25519 私钥',
+          backupDescription:
+            '这个 ed25519 私钥可用于恢复你的 ZeroChain 账户。',
+        );
     } catch (e) {
       _error = 'Failed to create wallet: $e';
       AppLogger.error('Create wallet failed', e);
@@ -176,7 +176,7 @@ class WalletProvider extends ChangeNotifier {
       if (signatureScheme != SignatureScheme.ed25519) {
         return ImportWalletResult(
           success: false,
-          error: 'Only native ed25519 wallet is supported',
+          error: 'Only ed25519 wallet is supported',
         );
       }
 
@@ -310,44 +310,44 @@ class WalletProvider extends ChangeNotifier {
     return true;
   }
 
-  Future<NativeComputeActionResult> simulateNativeComputeTx({
+  Future<ComputeTxActionResult> simulateComputeTx({
     required String jsonText,
     required String password,
   }) {
-    return _runNativeCompute(
+    return _runComputeTx(
       jsonText: jsonText,
       password: password,
       submit: false,
     );
   }
 
-  Future<NativeComputeActionResult> submitNativeComputeTx({
+  Future<ComputeTxActionResult> submitComputeTx({
     required String jsonText,
     required String password,
   }) {
-    return _runNativeCompute(
+    return _runComputeTx(
       jsonText: jsonText,
       password: password,
       submit: true,
     );
   }
 
-  Future<NativeComputeActionResult> _runNativeCompute({
+  Future<ComputeTxActionResult> _runComputeTx({
     required String jsonText,
     required String password,
     required bool submit,
   }) async {
     if (_currentAccount == null) {
-      return NativeComputeActionResult(
+      return ComputeTxActionResult(
         success: false,
         error: 'No active account',
       );
     }
 
     if (_currentAccount!.signatureScheme != SignatureScheme.ed25519) {
-      return NativeComputeActionResult(
+      return ComputeTxActionResult(
         success: false,
-        error: 'Current account is not native ed25519',
+        error: 'Current account is not ed25519',
       );
     }
 
@@ -360,7 +360,7 @@ class WalletProvider extends ChangeNotifier {
         password,
       );
       if (privateKeyHex == null || privateKeyHex.isEmpty) {
-        return NativeComputeActionResult(
+        return ComputeTxActionResult(
           success: false,
           error: 'Password incorrect or private key unavailable',
         );
@@ -368,14 +368,14 @@ class WalletProvider extends ChangeNotifier {
 
       final payload = jsonDecode(jsonText);
       if (payload is! Map) {
-        return NativeComputeActionResult(
+        return ComputeTxActionResult(
           success: false,
-          error: 'Native compute transaction must be a JSON object',
+          error: 'Compute transaction must be a JSON object',
         );
       }
 
       final txInput = Map<String, dynamic>.from(payload);
-      final signedTx = await NativeCompute.signTransaction(
+      final signedTx = await ComputeTx.signTransaction(
         input: txInput,
         privateKeyHex: privateKeyHex,
         publicKeyHex: _currentAccount!.publicKey,
@@ -387,15 +387,15 @@ class WalletProvider extends ChangeNotifier {
           : await _rpcClient!.simulateComputeTx(signedTx);
 
       _error = null;
-      return NativeComputeActionResult(
+      return ComputeTxActionResult(
         success: true,
         signedTx: signedTx,
         result: result,
       );
     } catch (e) {
-      _error = 'Native compute failed: $e';
-      AppLogger.error('Native compute failed', e);
-      return NativeComputeActionResult(success: false, error: _error);
+      _error = 'Compute transaction failed: $e';
+      AppLogger.error('Compute transaction failed', e);
+      return ComputeTxActionResult(success: false, error: _error);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -594,13 +594,13 @@ class ImportWalletResult {
   ImportWalletResult({required this.success, this.account, this.error});
 }
 
-class NativeComputeActionResult {
+class ComputeTxActionResult {
   final bool success;
   final Map<String, dynamic>? signedTx;
   final dynamic result;
   final String? error;
 
-  NativeComputeActionResult({
+  ComputeTxActionResult({
     required this.success,
     this.signedTx,
     this.result,

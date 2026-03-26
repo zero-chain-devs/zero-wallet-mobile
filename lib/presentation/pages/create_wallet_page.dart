@@ -93,7 +93,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                           child: Row(
                             children: [
                               WalletChoicePill(
-                                label: '原生',
+                                label: 'ed25519',
                                 active: true,
                                 onTap: () {},
                               ),
@@ -102,7 +102,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          '原生账户通过随机 ed25519 私钥生成，后续用 native 语义签名 compute 交易。',
+                          '账户通过随机 ed25519 私钥生成，后续统一签名 compute 交易。',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.62),
                             height: 1.5,
@@ -120,7 +120,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                           style: const TextStyle(color: Colors.white),
                           decoration: WalletUi.inputDecoration(
                             label: '账户名称',
-                            hint: 'native-1',
+                            hint: 'ed25519-1',
                             prefixIcon: const Icon(
                               Icons.person_outline_rounded,
                               color: Colors.white54,

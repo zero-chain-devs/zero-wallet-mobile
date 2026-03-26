@@ -1,10 +1,10 @@
-# Zero Wallet Mobile (Native-Only)
+# Zero Wallet Mobile
 
-Flutter 版 ZeroChain 钱包当前为 native-only 形态：
-- 创建 `ed25519` 原生账户
+Flutter 版 ZeroChain 钱包当前聚焦单一路径实现：
+- 创建 `ed25519` 账户
 - 导入 `ed25519` 私钥
 - 本地加密保险库
-- native compute 交易模拟与提交
+- compute 交易模拟与提交
 - 网络切换与余额刷新
 
 ## 开发
@@ -23,5 +23,4 @@ flutter test
 
 ## 说明
 
-移动端不再提供 legacy provider 与非原生账户路径，所有发送流程统一为 native compute。
-
+移动端不再提供旧页面桥接与非 `ed25519` 账户路径，所有发送流程统一为 compute 交易。

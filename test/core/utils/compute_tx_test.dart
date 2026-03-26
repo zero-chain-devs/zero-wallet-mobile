@@ -1,16 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_wallet/core/utils/crypto_utils.dart';
-import 'package:zero_wallet/core/utils/native_compute.dart';
+import 'package:zero_wallet/core/utils/compute_tx.dart';
 
 String repeatHex(String pair) => List<String>.filled(32, pair).join();
 
 void main() {
-  group('NativeCompute', () {
+  group('ComputeTx', () {
     test(
       'defaultTemplate preserves network parameters and native owner key',
       () {
         final publicKey = '0x${repeatHex('11')}';
-        final template = NativeCompute.defaultTemplate(
+        final template = ComputeTx.defaultTemplate(
           publicKey: publicKey,
           chainId: 10086,
           networkId: 1,
@@ -29,7 +29,7 @@ void main() {
     );
 
     test('defaultTemplate falls back to a zeroed public key when empty', () {
-      final template = NativeCompute.defaultTemplate(
+      final template = ComputeTx.defaultTemplate(
         publicKey: '',
         chainId: 10086,
         networkId: 9,
@@ -43,7 +43,7 @@ void main() {
     });
 
     test('buildUnsignedTransaction sorts resources and normalizes payload', () {
-      final unsigned = NativeCompute.buildUnsignedTransaction(<String, dynamic>{
+      final unsigned = ComputeTx.buildUnsignedTransaction(<String, dynamic>{
         'domain_id': 0,
         'command': 'Mint',
         'payload': '01',
@@ -89,7 +89,7 @@ void main() {
         final privateKey = repeatHex('22');
         final wallet = await CryptoUtils.deriveWalletFromPrivateKey(privateKey);
 
-        final signed = await NativeCompute.signTransaction(
+        final signed = await ComputeTx.signTransaction(
           input: <String, dynamic>{
             'domain_id': 0,
             'command': 'Mint',
