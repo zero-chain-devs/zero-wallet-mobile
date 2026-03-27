@@ -1017,6 +1017,44 @@ class _SettingsTab extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showRpcUrlEditor(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.edit_rounded, size: 18),
+                      label: const Text('编辑 RPC'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _resetRpcUrl(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                      label: const Text('恢复默认'),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -1073,6 +1111,59 @@ class _SettingsTab extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Future<void> _showRpcUrlEditor(BuildContext context) async {
+    final controller = TextEditingController(text: provider.currentRpcUrl);
+    final nextUrl = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('编辑 RPC URL'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(
+            hintText: 'http://host:port',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    if (nextUrl == null || nextUrl.isEmpty || !context.mounted) {
+      return;
+    }
+    final ok = await provider.updateCurrentNetworkRpcUrl(nextUrl);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'RPC URL 已更新' : (provider.error ?? 'RPC URL 更新失败')),
+      ),
+    );
+  }
+
+  Future<void> _resetRpcUrl(BuildContext context) async {
+    final ok = await provider.resetCurrentNetworkRpcUrl();
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '已恢复默认 RPC URL' : (provider.error ?? '恢复默认失败')),
+      ),
     );
   }
 }
