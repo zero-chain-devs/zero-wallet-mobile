@@ -285,6 +285,16 @@ class _HomeTab extends StatelessWidget {
         ? '--'
         : TimeOfDay.fromDateTime(currentBalance!.updatedAt).format(context);
     final rpcHostText = _formatRpcHost(provider.currentRpcUrl);
+    final hasFreshState = currentBalance?.updatedAt != null;
+    final isStale = hasFreshState &&
+        DateTime.now().difference(currentBalance!.updatedAt).inMinutes >= 2;
+    final statusMessage = (provider.error ?? '').isNotEmpty
+        ? 'RPC 不可达 · ${provider.error}'
+        : !hasFreshState
+            ? '等待首次同步 · 账户状态将在首次 RPC 查询后展示'
+            : isStale
+                ? '状态可能偏旧 · 上次刷新 $refreshedAtText'
+                : '状态已同步 · 当前 RPC $rpcHostText';
     final balanceText = isNative
         ? '${currentBalance?.balanceFormatted ?? '0'} ${currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}'
         : '\$${currentBalance?.balanceFormatted ?? "0.00"}';
@@ -390,16 +400,11 @@ class _HomeTab extends StatelessWidget {
             ),
           ],
         ),
-        if ((provider.error ?? '').isNotEmpty) ...[
-          const SizedBox(height: 18),
-          WalletBanner(message: provider.error!, error: true),
-        ] else ...[
-          const SizedBox(height: 18),
-          const WalletBanner(
-            message: 'RPC 状态正常，账户余额与状态信息已同步。',
-            error: false,
-          ),
-        ],
+        const SizedBox(height: 18),
+        WalletBanner(
+          message: statusMessage,
+          error: (provider.error ?? '').isNotEmpty,
+        ),
         const SizedBox(height: 22),
         const WalletSectionTitle(title: '账户状态'),
         const SizedBox(height: 10),
