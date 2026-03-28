@@ -279,17 +279,20 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNative = account.signatureScheme == SignatureScheme.ed25519;
+    final currentBalance = provider.currentBalance;
     final balanceText = isNative
-        ? '--'
-        : '\$${provider.currentBalance?.balanceFormatted ?? "0.00"}';
+        ? '${currentBalance?.balanceFormatted ?? '0'} ${currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}'
+        : '\$${currentBalance?.balanceFormatted ?? "0.00"}';
     final assetRows = <Map<String, Object>>[
       {
         'name': isNative ? '当前账户' : 'Solana',
         'subtitle': isNative
             ? 'ed25519 / compute'
-            : '${provider.currentBalance?.balanceFormatted ?? '0'} ${provider.currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}',
+            : '${currentBalance?.balanceFormatted ?? '0'} ${currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}',
         'value': balanceText,
-        'delta': isNative ? '账户已解锁' : '-\$0.12',
+        'delta': isNative
+            ? '余额已同步'
+            : '-\$0.12',
         'positive': isNative,
         'color': const Color(0xFF6D5BFF),
         'avatar': isNative ? 'ZN' : 'S',
