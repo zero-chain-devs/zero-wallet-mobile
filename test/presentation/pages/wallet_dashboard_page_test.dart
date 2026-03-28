@@ -113,7 +113,7 @@ void main() {
 
       expect(find.text('复制地址'), findsOneWidget);
       expect(find.text(provider.currentAccount!.address), findsOneWidget);
-      expect(find.text(provider.currentNetwork.name), findsOneWidget);
+      expect(find.text(provider.currentNetwork.name), findsAtLeastNWidgets(1));
 
       await tester.tap(find.text('复制地址'));
       await tester.pump();
@@ -142,7 +142,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('代币'), findsOneWidget);
+      expect(find.text('账户状态'), findsOneWidget);
 
       await tester.tap(find.text('兑换').last);
       await tester.pumpAndSettle();

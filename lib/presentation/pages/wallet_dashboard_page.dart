@@ -284,42 +284,24 @@ class _HomeTab extends StatelessWidget {
         : '\$${provider.currentBalance?.balanceFormatted ?? "0.00"}';
     final assetRows = <Map<String, Object>>[
       {
-        'name': isNative ? 'Zero Compute' : 'Solana',
+        'name': isNative ? '当前账户' : 'Solana',
         'subtitle': isNative
-            ? 'compute account'
+            ? 'ed25519 / compute'
             : '${provider.currentBalance?.balanceFormatted ?? '0'} ${provider.currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}',
         'value': balanceText,
-        'delta': isNative ? 'compute tx' : '-\$0.12',
+        'delta': isNative ? '账户已解锁' : '-\$0.12',
         'positive': isNative,
         'color': const Color(0xFF6D5BFF),
         'avatar': isNative ? 'ZN' : 'S',
       },
       {
-        'name': 'Dogcz',
-        'subtitle': '2,609.27888 Dogcz',
-        'value': '\$0.03',
-        'delta': '+<\$0.01',
+        'name': '当前网络',
+        'subtitle': provider.currentNetwork.name,
+        'value': '--',
+        'delta': provider.currentNetwork.currencySymbol,
         'positive': true,
         'color': const Color(0xFF8B5CF6),
-        'avatar': 'D',
-      },
-      {
-        'name': 'Compute Credit',
-        'subtitle': '0 CRED',
-        'value': '\$0.00',
-        'delta': '\$0.00',
-        'positive': false,
-        'color': const Color(0xFF94A3B8),
-        'avatar': 'C',
-      },
-      {
-        'name': 'Bitcoin',
-        'subtitle': '0 BTC',
-        'value': '\$0.00',
-        'delta': '\$0.00',
-        'positive': false,
-        'color': const Color(0xFFF59E0B),
-        'avatar': 'B',
+        'avatar': 'NW',
       },
     ];
 
@@ -392,7 +374,7 @@ class _HomeTab extends StatelessWidget {
           WalletBanner(message: provider.error!, error: true),
         ],
         const SizedBox(height: 22),
-        const WalletSectionTitle(title: '代币'),
+        const WalletSectionTitle(title: '账户状态'),
         const SizedBox(height: 10),
         ...assetRows.map(
           (item) => Padding(
