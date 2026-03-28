@@ -587,16 +587,8 @@ class WalletBottomNav extends StatelessWidget {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: '首页'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.wallet_outlined),
-            label: '预览市场',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.sync_alt_rounded),
             label: '兑换',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            label: '预览动态',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search_rounded),

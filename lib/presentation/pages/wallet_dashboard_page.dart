@@ -86,17 +86,15 @@ class _WalletDashboardPageState extends State<WalletDashboardPage> {
             provider: provider,
             account: account,
             onSend: () => _openSend(context),
-            onSwap: () => setState(() => _selectedIndex = 2),
+            onSwap: () => setState(() => _selectedIndex = 1),
             onReceive: () => _showReceiveSheet(
               context,
               account,
               provider.currentNetwork.name,
             ),
-            onBuy: () => setState(() => _selectedIndex = 1),
+            onBuy: () => setState(() => _selectedIndex = 2),
           ),
-          const _MarketsTab(),
           _SwapTab(account: account, onOpenSend: () => _openSend(context)),
-          const _ActivityTab(),
           _SettingsTab(provider: provider, account: account),
         ];
 
@@ -1069,6 +1067,81 @@ class _SettingsTab extends StatelessWidget {
                       ),
                       icon: const Icon(Icons.restart_alt_rounded, size: 18),
                       label: const Text('恢复默认'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        WalletDarkCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Preview Surfaces',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '管理网络与预览入口',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.72),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const WalletPreviewBanner(
+                title: 'Preview',
+                label: 'Static Demo',
+                message: '设计预览入口：市场、聊天与静态兑换样式已从主导航降权，只保留为预览。',
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const _MarketsTab()),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.wallet_outlined, size: 18),
+                      label: const Text('Markets Preview'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const _ActivityTab()),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                      label: const Text('Activity Preview'),
                     ),
                   ),
                 ],

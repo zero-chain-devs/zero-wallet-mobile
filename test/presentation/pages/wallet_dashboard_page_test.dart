@@ -144,25 +144,18 @@ void main() {
 
       expect(find.text('代币'), findsOneWidget);
 
-      await tester.tap(find.text('预览市场').last);
-      await tester.pumpAndSettle();
-      expect(find.text('流行代币'), findsOneWidget);
-      expect(find.text('流行永续合约'), findsOneWidget);
-
       await tester.tap(find.text('兑换').last);
       await tester.pumpAndSettle();
       expect(find.text('打开 Compute 交易页'), findsOneWidget);
       expect(find.text('支付'), findsWidgets);
 
-      await tester.tap(find.text('预览动态').last);
-      await tester.pumpAndSettle();
-      expect(find.text('热门'), findsOneWidget);
-      expect(find.text('尚无可显示的聊天。'), findsOneWidget);
-
       await tester.tap(find.text('设置').last);
       await tester.pumpAndSettle();
       expect(find.text('账户切换'), findsOneWidget);
       expect(find.text('网络'), findsOneWidget);
+      expect(find.text('Preview Surfaces'), findsOneWidget);
+      expect(find.text('Markets Preview'), findsOneWidget);
+      expect(find.text('Activity Preview'), findsOneWidget);
     });
   });
 }

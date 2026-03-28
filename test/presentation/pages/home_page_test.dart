@@ -86,8 +86,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('管理网络与偏好'), findsOneWidget);
-      expect(find.text('输入'), findsOneWidget);
-      expect(find.text('导入已有钱包'), findsOneWidget);
+      expect(find.textContaining('守护你的资产'), findsOneWidget);
     });
 
     testWidgets('shows error state and retries initialize when tapped', (

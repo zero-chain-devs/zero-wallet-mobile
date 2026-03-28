@@ -287,7 +287,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            WalletBottomNav(
+            _WelcomeBottomNav(
               currentIndex: _welcomeNavIndex,
               onTap: (index) => setState(() => _welcomeNavIndex = index),
             ),
@@ -360,6 +360,57 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ImportWalletPage()),
+    );
+  }
+}
+
+class _WelcomeBottomNav extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const _WelcomeBottomNav({
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      decoration: BoxDecoration(
+        color: WalletUi.panel,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: currentIndex,
+        onTap: onTap,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: WalletUi.accent,
+        unselectedItemColor: Colors.white38,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: '首页'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.wallet_outlined),
+            label: '发现',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sync_alt_rounded),
+            label: '兑换',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            label: '最近',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search_rounded),
+            label: '设置',
+          ),
+        ],
+      ),
     );
   }
 }
