@@ -300,7 +300,7 @@ class WalletPreviewBanner extends StatelessWidget {
                   border: Border.all(color: const Color(0x66F4C95D)),
                 ),
                 child: const Text(
-                  'STATIC DEMO',
+                  '仅供参考',
                   style: TextStyle(
                     color: Color(0xFFF7DFA3),
                     fontSize: 10,
