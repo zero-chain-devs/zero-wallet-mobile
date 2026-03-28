@@ -83,6 +83,67 @@ void main() {
       );
     });
 
+    test('buildUnsignedTransaction keeps ZER0x address owners normalized', () {
+      final unsigned = ComputeTx.buildUnsignedTransaction(<String, dynamic>{
+        'domain_id': 0,
+        'command': 'Mint',
+        'output_proposals': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'output_id': '0x${repeatHex('12')}',
+            'object_id': '0x${repeatHex('34')}',
+            'domain_id': 0,
+            'kind': 'Asset',
+            'owner': <String, dynamic>{
+              'type': 'Address',
+              'address': 'ZER0x9aea038CD4255BaaC26eAC5A74e58a07ED2f1975',
+            },
+            'version': 1,
+            'state': '0x',
+          },
+        ],
+      }, threshold: 1);
+
+      final outputs = unsigned['output_proposals'] as List<dynamic>;
+      final firstOutput = outputs.first as Map<String, dynamic>;
+      final owner = firstOutput['owner'] as Map<String, dynamic>;
+
+      expect(owner['address'], 'ZER0x9aea038CD4255BaaC26eAC5A74e58a07ED2f1975');
+    });
+
+    test(
+      'buildUnsignedTransaction accepts ed25519 public keys with duplicated 0x prefix',
+      () {
+        final unsigned = ComputeTx.buildUnsignedTransaction(<String, dynamic>{
+          'domain_id': 0,
+          'command': 'Mint',
+          'output_proposals': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'output_id': '0x${repeatHex('56')}',
+              'object_id': '0x${repeatHex('78')}',
+              'domain_id': 0,
+              'kind': 'Asset',
+              'owner': <String, dynamic>{
+                'type': 'Ed25519',
+                'public_key':
+                    '0x0xea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c',
+              },
+              'version': 1,
+              'state': '0x',
+            },
+          ],
+        }, threshold: 1);
+
+        final outputs = unsigned['output_proposals'] as List<dynamic>;
+        final firstOutput = outputs.first as Map<String, dynamic>;
+        final owner = firstOutput['owner'] as Map<String, dynamic>;
+
+        expect(
+          owner['public_key'],
+          '0xea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c',
+        );
+      },
+    );
+
     test(
       'signTransaction returns tx id and ed25519 witness envelope',
       () async {

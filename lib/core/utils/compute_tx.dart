@@ -487,14 +487,14 @@ class ComputeTx {
         out.add(1);
         _appendBytes(
           out,
-          _fixedHexBytes(owner['address'].toString(), 20, '20-byte address'),
+          _address20Bytes(owner['address'].toString()),
         );
         return;
       case 'Program':
         out.add(2);
         _appendBytes(
           out,
-          _fixedHexBytes(owner['address'].toString(), 20, '20-byte address'),
+          _address20Bytes(owner['address'].toString()),
         );
         return;
       case 'Shared':
@@ -697,11 +697,7 @@ class ComputeTx {
   }
 
   static String _normalizeAddress20(String value) {
-    final normalized = _normalizeHexData(value);
-    if (_hexToBytes(normalized).length != 20) {
-      throw ArgumentError('Expected 20-byte address');
-    }
-    return normalized;
+    return CryptoUtils.normalizeNativeAddress(value);
   }
 
   static String _normalizeHexData(String value) {
@@ -709,7 +705,19 @@ class ComputeTx {
     if (trimmed.isEmpty) {
       return '0x';
     }
-    return trimmed.startsWith('0x') ? trimmed : '0x$trimmed';
+    var normalized = trimmed;
+    while (normalized.startsWith('0x0x') ||
+        normalized.startsWith('0X0x') ||
+        normalized.startsWith('0x0X')) {
+      normalized = '0x${normalized.substring(4)}';
+    }
+    return normalized.startsWith('0x') ? normalized : '0x$normalized';
+  }
+
+  static Uint8List _address20Bytes(String value) {
+    final normalized = CryptoUtils.normalizeNativeAddress(value);
+    final body = normalized.substring(CryptoUtils.nativeAddressPrefix.length);
+    return CryptoUtils.hexToBytes(body);
   }
 
   static List<dynamic> _asList(dynamic value) {
