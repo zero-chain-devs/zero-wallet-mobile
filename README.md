@@ -7,6 +7,9 @@ Flutter 版 ZeroChain 钱包当前聚焦单一路径实现：
 - compute 交易模拟与提交
 - 网络切换与余额刷新
 
+共享 compute JSON 规范见：
+- [COMPUTE_JSON_SPEC.md](/root/workspaces/blockchain/zero-chain/docs/COMPUTE_JSON_SPEC.md)
+
 ## 开发
 
 ```bash
