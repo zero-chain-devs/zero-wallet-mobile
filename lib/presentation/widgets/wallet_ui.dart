@@ -256,6 +256,76 @@ class WalletBanner extends StatelessWidget {
   }
 }
 
+class WalletPreviewBanner extends StatelessWidget {
+  final String title;
+  final String label;
+  final String message;
+
+  const WalletPreviewBanner({
+    super.key,
+    required this.title,
+    required this.label,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2612),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0x66F4C95D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFFF7DFA3),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.4,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: const Color(0x66F4C95D)),
+                ),
+                child: const Text(
+                  'STATIC DEMO',
+                  style: TextStyle(
+                    color: Color(0xFFF7DFA3),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.6,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: const TextStyle(
+              color: Color(0xFFFBE7B6),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class WalletActionTile extends StatelessWidget {
   final IconData icon;
   final String label;

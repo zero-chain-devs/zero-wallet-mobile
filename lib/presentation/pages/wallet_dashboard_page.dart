@@ -484,6 +484,12 @@ class _MarketsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       children: [
+        const WalletPreviewBanner(
+          title: 'Preview',
+          label: 'Static Demo',
+          message: '本页当前仅展示静态市场样式，不代表真实价格、成交量或排名。',
+        ),
+        const SizedBox(height: 14),
         Row(
           children: [
             Container(
@@ -605,6 +611,12 @@ class _SwapTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       children: [
+        const WalletPreviewBanner(
+          title: 'Preview',
+          label: 'Static Demo',
+          message: '本页当前是静态兑换演示面板，展示值不代表真实撮合或报价。',
+        ),
+        const SizedBox(height: 14),
         const WalletHeader(
           eyebrow: '@HalloXwish',
           title: '兑换',
@@ -754,6 +766,12 @@ class _ActivityTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       children: [
+        const WalletPreviewBanner(
+          title: 'Preview',
+          label: 'Static Demo',
+          message: '本页当前仅展示静态活动与聊天样式，不代表真实用户动态。',
+        ),
+        const SizedBox(height: 14),
         const WalletHeader(eyebrow: '@HalloXwish', title: '聊天'),
         const SizedBox(height: 20),
         const WalletSectionTitle(title: '热门'),
