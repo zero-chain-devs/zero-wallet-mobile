@@ -144,7 +144,7 @@ void main() {
 
       expect(find.text('代币'), findsOneWidget);
 
-      await tester.tap(find.text('发现').last);
+      await tester.tap(find.text('预览市场').last);
       await tester.pumpAndSettle();
       expect(find.text('流行代币'), findsOneWidget);
       expect(find.text('流行永续合约'), findsOneWidget);
@@ -154,7 +154,7 @@ void main() {
       expect(find.text('打开 Compute 交易页'), findsOneWidget);
       expect(find.text('支付'), findsWidgets);
 
-      await tester.tap(find.text('最近').last);
+      await tester.tap(find.text('预览动态').last);
       await tester.pumpAndSettle();
       expect(find.text('热门'), findsOneWidget);
       expect(find.text('尚无可显示的聊天。'), findsOneWidget);
