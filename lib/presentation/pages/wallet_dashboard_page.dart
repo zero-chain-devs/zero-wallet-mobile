@@ -52,7 +52,7 @@ class _WalletDashboardPageState extends State<WalletDashboardPage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'No account found',
+                          '未找到钱包账户',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -61,7 +61,7 @@ class _WalletDashboardPageState extends State<WalletDashboardPage> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Create or import an account to continue.',
+                          '请先创建或导入账户，再继续使用钱包。',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.58),
@@ -466,7 +466,7 @@ class _MarketsTab extends StatelessWidget {
       children: [
         const WalletPreviewBanner(
           title: 'Preview',
-          label: 'Static Demo',
+          label: 'Informational',
           message: '本页当前仅展示静态市场样式，不代表真实价格、成交量或排名。',
         ),
         const SizedBox(height: 14),
@@ -598,7 +598,7 @@ class _SwapTab extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         const WalletHeader(
-          eyebrow: '@HalloXwish',
+          eyebrow: 'ZeroChain Preview',
           title: '兑换',
           trailing: _CircleIconButton(icon: Icons.tune_rounded),
         ),
@@ -748,11 +748,11 @@ class _ActivityTab extends StatelessWidget {
       children: [
         const WalletPreviewBanner(
           title: 'Preview',
-          label: 'Static Demo',
+          label: 'Informational',
           message: '本页当前仅展示静态活动与聊天样式，不代表真实用户动态。',
         ),
         const SizedBox(height: 14),
-        const WalletHeader(eyebrow: '@HalloXwish', title: '聊天'),
+        const WalletHeader(eyebrow: 'ZeroChain Preview', title: '聊天'),
         const SizedBox(height: 20),
         const WalletSectionTitle(title: '热门'),
         const SizedBox(height: 12),
@@ -827,7 +827,7 @@ class _ActivityTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                '尚无可显示的聊天。',
+                '当前没有可展示的活动记录。',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.34),
                   fontSize: 16,
@@ -1062,7 +1062,7 @@ class _SettingsTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Preview Surfaces',
+                '预览页面',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -1081,7 +1081,7 @@ class _SettingsTab extends StatelessWidget {
               const SizedBox(height: 8),
               const WalletPreviewBanner(
                 title: 'Preview',
-                label: 'Static Demo',
+                label: 'Informational',
                 message: '设计预览入口：市场、聊天与静态兑换样式已从主导航降权，只保留为预览。',
               ),
               const SizedBox(height: 12),
@@ -1103,7 +1103,7 @@ class _SettingsTab extends StatelessWidget {
                         ),
                       ),
                       icon: const Icon(Icons.wallet_outlined, size: 18),
-                      label: const Text('Markets Preview'),
+                      label: const Text('市场预览'),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1123,7 +1123,7 @@ class _SettingsTab extends StatelessWidget {
                         ),
                       ),
                       icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                      label: const Text('Activity Preview'),
+                      label: const Text('活动预览'),
                     ),
                   ),
                 ],

@@ -50,7 +50,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '@ZeroWallet',
+                              'ZeroChain Wallet',
                               style: TextStyle(
                                 color: Colors.white54,
                                 fontSize: 14,

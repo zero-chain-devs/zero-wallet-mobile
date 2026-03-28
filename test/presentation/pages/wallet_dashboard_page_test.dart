@@ -153,9 +153,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('账户切换'), findsOneWidget);
       expect(find.text('网络'), findsOneWidget);
-      expect(find.text('Preview Surfaces'), findsOneWidget);
-      expect(find.text('Markets Preview'), findsOneWidget);
-      expect(find.text('Activity Preview'), findsOneWidget);
+      expect(find.text('预览页面'), findsOneWidget);
+      expect(find.text('市场预览'), findsOneWidget);
+      expect(find.text('活动预览'), findsOneWidget);
     });
   });
 }
