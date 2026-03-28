@@ -22,6 +22,7 @@ class WalletProvider extends ChangeNotifier {
     isActive: true,
   );
   AccountBalance? _currentBalance;
+  String? _currentNonceHex;
   List<Transaction> _transactions = <Transaction>[];
   ZeroChainRpcClient? _rpcClient;
   Map<String, String> _networkRpcOverrides = <String, String>{};
@@ -33,6 +34,7 @@ class WalletProvider extends ChangeNotifier {
   WalletAccount? get currentAccount => _currentAccount;
   WalletNetwork get currentNetwork => _currentNetwork;
   AccountBalance? get currentBalance => _currentBalance;
+  String? get currentNonceHex => _currentNonceHex;
   List<Transaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -80,6 +82,7 @@ class WalletProvider extends ChangeNotifier {
       } else {
         _currentAccount = null;
         _currentBalance = null;
+        _currentNonceHex = null;
       }
 
       _isInitialized = true;
@@ -405,6 +408,7 @@ class WalletProvider extends ChangeNotifier {
   Future<void> refreshBalance() async {
     if (_currentAccount == null) {
       _currentBalance = null;
+      _currentNonceHex = null;
       return;
     }
 
@@ -412,6 +416,7 @@ class WalletProvider extends ChangeNotifier {
       _rpcClient ??= ZeroChainRpcClient(network: _currentNetwork.toConfig());
       final accountInfo = await _rpcClient!.getAccount(_currentAccount!.address);
       final rawBalance = accountInfo['balance']?.toString() ?? '0x0';
+      _currentNonceHex = accountInfo['nonce']?.toString() ?? '0x0';
 
       _currentBalance = AccountBalance.fromRaw(
         address: _currentAccount!.address,
@@ -429,6 +434,7 @@ class WalletProvider extends ChangeNotifier {
         decimals: _currentNetwork.decimals,
         symbol: _currentNetwork.currencySymbol,
       );
+      _currentNonceHex = '0x0';
       _error = 'Balance unavailable on ${_currentNetwork.name}: $e';
       notifyListeners();
     }
@@ -453,6 +459,7 @@ class WalletProvider extends ChangeNotifier {
     _accounts = <WalletAccount>[];
     _currentAccount = null;
     _currentBalance = null;
+    _currentNonceHex = null;
     _transactions = <Transaction>[];
     _error = null;
     _isInitialized = false;

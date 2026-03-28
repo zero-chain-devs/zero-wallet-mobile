@@ -280,6 +280,11 @@ class _HomeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final isNative = account.signatureScheme == SignatureScheme.ed25519;
     final currentBalance = provider.currentBalance;
+    final nonceText = provider.currentNonceHex ?? '0x0';
+    final refreshedAtText = currentBalance?.updatedAt == null
+        ? '--'
+        : TimeOfDay.fromDateTime(currentBalance!.updatedAt).format(context);
+    final rpcHostText = _formatRpcHost(provider.currentRpcUrl);
     final balanceText = isNative
         ? '${currentBalance?.balanceFormatted ?? '0'} ${currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}'
         : '\$${currentBalance?.balanceFormatted ?? "0.00"}';
@@ -344,6 +349,19 @@ class _HomeTab extends StatelessWidget {
             _DeltaPill(label: isNative ? 'ready' : '-3.98%'),
           ],
         ),
+        const SizedBox(height: 14),
+        WalletDarkCard(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(child: _StatusTile(label: 'Nonce', value: nonceText)),
+              const SizedBox(width: 10),
+              Expanded(child: _StatusTile(label: '最近刷新', value: refreshedAtText)),
+              const SizedBox(width: 10),
+              Expanded(child: _StatusTile(label: '当前 RPC', value: rpcHostText)),
+            ],
+          ),
+        ),
         const SizedBox(height: 18),
         Row(
           children: [
@@ -397,6 +415,58 @@ class _HomeTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+String _formatRpcHost(String rpcUrl) {
+  try {
+    final uri = Uri.parse(rpcUrl);
+    return uri.host.isEmpty ? rpcUrl : uri.host;
+  } catch (_) {
+    return rpcUrl;
+  }
+}
+
+class _StatusTile extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatusTile({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.20),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.35),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.82),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
