@@ -393,6 +393,12 @@ class _HomeTab extends StatelessWidget {
         if ((provider.error ?? '').isNotEmpty) ...[
           const SizedBox(height: 18),
           WalletBanner(message: provider.error!, error: true),
+        ] else ...[
+          const SizedBox(height: 18),
+          const WalletBanner(
+            message: 'RPC 状态正常，账户余额与状态信息已同步。',
+            error: false,
+          ),
         ],
         const SizedBox(height: 22),
         const WalletSectionTitle(title: '账户状态'),
