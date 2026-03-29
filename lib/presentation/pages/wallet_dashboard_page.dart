@@ -290,11 +290,13 @@ class _HomeTab extends StatelessWidget {
         DateTime.now().difference(currentBalance!.updatedAt).inMinutes >= 2;
     final statusMessage = (provider.error ?? '').isNotEmpty
         ? 'RPC 不可达 · ${provider.error}'
+        : provider.isLoading
+            ? '正在同步账户状态...'
         : !hasFreshState
             ? '等待首次同步 · 账户状态将在首次 RPC 查询后展示'
             : isStale
                 ? '状态可能偏旧 · 上次刷新 $refreshedAtText'
-                : '状态已同步 · 当前 RPC $rpcHostText';
+                : '状态已同步 · 上次成功同步 $refreshedAtText';
     final balanceText = isNative
         ? '${currentBalance?.balanceFormatted ?? '0'} ${currentBalance?.symbol ?? provider.currentNetwork.currencySymbol}'
         : '\$${currentBalance?.balanceFormatted ?? "0.00"}';
@@ -404,6 +406,8 @@ class _HomeTab extends StatelessWidget {
         WalletBanner(
           message: statusMessage,
           error: (provider.error ?? '').isNotEmpty,
+          actionLabel: provider.isLoading ? null : '重新同步',
+          onAction: () => provider.refreshBalance(),
         ),
         const SizedBox(height: 22),
         const WalletSectionTitle(title: '账户状态'),
