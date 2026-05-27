@@ -11,6 +11,21 @@ import '../../core/utils/logger.dart';
 import '../../core/utils/compute_tx.dart';
 import '../../data/models/wallet_models.dart';
 
+bool isSupportedCustomRpcUri(Uri uri) {
+  if ((uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
+    return false;
+  }
+
+  if (uri.scheme == 'https') {
+    return true;
+  }
+
+  return uri.host == 'localhost' ||
+      uri.host == '127.0.0.1' ||
+      uri.host == '::1' ||
+      uri.host == '10.0.2.2';
+}
+
 /// Wallet state management provider
 class WalletProvider extends ChangeNotifier {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -277,7 +292,8 @@ class WalletProvider extends ChangeNotifier {
   Future<bool> updateCurrentNetworkRpcUrl(String rpcUrl) async {
     final normalized = _normalizeRpcUrl(rpcUrl);
     if (normalized == null) {
-      _error = 'Invalid RPC URL. Use http://host:port or https://host';
+      _error =
+          'Invalid RPC URL. Use https://host or local http://127.0.0.1:port / http://10.0.2.2:port';
       notifyListeners();
       return false;
     }
@@ -501,7 +517,7 @@ class WalletProvider extends ChangeNotifier {
       return null;
     }
 
-    if (uri.scheme != 'http' && uri.scheme != 'https') {
+    if (!isSupportedCustomRpcUri(uri)) {
       return null;
     }
 

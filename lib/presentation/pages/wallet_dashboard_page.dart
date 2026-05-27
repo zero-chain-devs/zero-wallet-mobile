@@ -1286,7 +1286,7 @@ class _SettingsTab extends StatelessWidget {
           autofocus: true,
           keyboardType: TextInputType.url,
           decoration: const InputDecoration(
-            hintText: 'http://host:port',
+            hintText: 'https://host or http://127.0.0.1:port',
             border: OutlineInputBorder(),
           ),
         ),

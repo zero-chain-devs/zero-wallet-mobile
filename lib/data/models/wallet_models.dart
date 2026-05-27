@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
+import 'package:uuid/uuid.dart';
 import '../../core/constants/app_constants.dart';
+
+const Uuid _uuid = Uuid();
 
 /// Wallet account model
 class WalletAccount extends Equatable {
@@ -32,7 +35,7 @@ class WalletAccount extends Equatable {
     SignatureScheme signatureScheme = SignatureScheme.ed25519,
   }) {
     return WalletAccount(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _uuid.v4(),
       name: name,
       address: address,
       publicKey: publicKey,
