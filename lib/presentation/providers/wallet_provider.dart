@@ -393,7 +393,10 @@ class WalletProvider extends ChangeNotifier {
         );
       }
 
-      final txInput = Map<String, dynamic>.from(payload);
+      final txInput = bindComputeTxToNetwork(
+        Map<String, dynamic>.from(payload),
+        _currentNetwork,
+      );
       final signedTx = await ComputeTx.signTransaction(
         input: txInput,
         privateKeyHex: privateKeyHex,
@@ -587,6 +590,51 @@ class WalletProvider extends ChangeNotifier {
       await _secureStorage.delete(key: AppConstants.storageKeyCurrentAccountId);
     }
   }
+}
+
+@visibleForTesting
+Map<String, dynamic> bindComputeTxToNetwork(
+  Map<String, dynamic> input,
+  WalletNetwork network,
+) {
+  final txChainId = _readOptionalPositiveInt(input['chain_id'], 'chain_id');
+  final txNetworkId = _readOptionalPositiveInt(input['network_id'], 'network_id');
+
+  if (txChainId != null && txChainId != network.chainId) {
+    throw ArgumentError(
+      'Compute tx chain_id $txChainId does not match selected chain_id ${network.chainId}',
+    );
+  }
+
+  if (txNetworkId != null && txNetworkId != network.networkId) {
+    throw ArgumentError(
+      'Compute tx network_id $txNetworkId does not match selected network_id ${network.networkId}',
+    );
+  }
+
+  return <String, dynamic>{
+    ...input,
+    'chain_id': network.chainId,
+    'network_id': network.networkId,
+  };
+}
+
+int? _readOptionalPositiveInt(dynamic value, String field) {
+  if (value == null || value.toString().trim().isEmpty) {
+    return null;
+  }
+
+  final parsed = switch (value) {
+    int() => value,
+    String() => int.tryParse(value.trim()),
+    _ => null,
+  };
+
+  if (parsed == null || parsed <= 0) {
+    throw ArgumentError('Compute tx $field must be a positive integer when provided');
+  }
+
+  return parsed;
 }
 
 enum WalletImportMode { privateKey }
