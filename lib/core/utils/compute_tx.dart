@@ -72,6 +72,9 @@ class ComputeTx {
       'chain_id': chainId,
       'network_id': networkId,
       'threshold': 1,
+      'max_fee': 0,
+      'priority_fee': 0,
+      'gas_limit': 0,
     };
   }
 
@@ -151,6 +154,9 @@ class ComputeTx {
         'signatures': <Map<String, dynamic>>[],
         'threshold': threshold,
       },
+      'max_fee': _readInt(input['max_fee'], fallback: 0),
+      'priority_fee': _readInt(input['priority_fee'], fallback: 0),
+      'gas_limit': _readInt(input['gas_limit'], fallback: 0),
     };
   }
 
@@ -158,7 +164,7 @@ class ComputeTx {
     final out = <int>[];
     _appendBytes(
       out,
-      Uint8List.fromList(utf8.encode('ZEROCHAIN-COMPUTE-SIGNING-V1')),
+      Uint8List.fromList(utf8.encode('RABBITCHAIN-COMPUTE-SIGNING-V1')),
     );
     _appendU32(out, _readInt(tx['domain_id']));
     out.add(_commandTag(tx['command'] as String));
@@ -253,6 +259,13 @@ class ComputeTx {
     _encodeOptionalU64(out, _readNullableInt(tx['chain_id']));
     _encodeOptionalU32(out, _readNullableInt(tx['network_id']));
     _appendU16(out, _readInt(_asMap(tx['witness'])['threshold'], fallback: 1));
+
+    // EIP-1559 fee fields (v1.2+): version marker allows backward compat.
+    // 0=legacy, 1=v1.2 with EIP-1559 fields (mirrors node tx.rs).
+    out.add(1);
+    _appendU64(out, _readInt(tx['max_fee'], fallback: 0));
+    _appendU64(out, _readInt(tx['priority_fee'], fallback: 0));
+    _appendU64(out, _readInt(tx['gas_limit'], fallback: 0));
 
     return Uint8List.fromList(out);
   }
