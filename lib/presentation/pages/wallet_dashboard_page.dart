@@ -280,7 +280,7 @@ class _HomeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final isNative = account.signatureScheme == SignatureScheme.ed25519;
     final currentBalance = provider.currentBalance;
-    final nonceText = provider.currentNonceHex ?? '0x0';
+    final nonceText = provider.currentInputNonce ?? '0x0';
     final refreshedAtText = currentBalance?.updatedAt == null
         ? '--'
         : TimeOfDay.fromDateTime(currentBalance!.updatedAt).format(context);
@@ -366,7 +366,7 @@ class _HomeTab extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
-              Expanded(child: _StatusTile(label: 'Nonce', value: nonceText)),
+              Expanded(child: _StatusTile(label: 'Input Nonce', value: nonceText)),
               const SizedBox(width: 10),
               Expanded(child: _StatusTile(label: '最近刷新', value: refreshedAtText)),
               const SizedBox(width: 10),
@@ -515,7 +515,7 @@ class _MarketsTab extends StatelessWidget {
           ],
           [
             '3',
-            'SOL人生',
+            'Rbit人生',
             '\$225K MC',
             '\$0.00023324',
             '+3,202.88%',
@@ -674,7 +674,7 @@ class _SwapTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNative = account.signatureScheme == SignatureScheme.ed25519;
-    const title = 'ZeroChain';
+    const title = 'RabbitChain';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -686,7 +686,7 @@ class _SwapTab extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         const WalletHeader(
-          eyebrow: 'ZeroChain 预览页',
+          eyebrow: 'RabbitChain 预览页',
           title: '兑换',
           trailing: _CircleIconButton(icon: Icons.tune_rounded),
         ),
@@ -698,8 +698,8 @@ class _SwapTab extends StatelessWidget {
                 title: '支付',
                 badge: title,
                 bigValue: '0',
-                tokenLabel: isNative ? 'ZERO' : 'SOL',
-                subValue: isNative ? '0.00000 ZERO' : '0.02479 SOL',
+                tokenLabel: isNative ? 'Rbit' : 'USDC',
+                subValue: isNative ? '0.00000 Rbit' : '0.02479 USDC',
               ),
               const SizedBox(height: 10),
               Center(
@@ -805,7 +805,7 @@ class _SwapTab extends StatelessWidget {
               SizedBox(height: 14),
               WalletMarketRow(
                 rank: '3',
-                name: 'SOL人生',
+                name: 'Rbit人生',
                 subtitle: '\$225K MC',
                 price: '\$0.00023324',
                 change: '+3,202.88%',
@@ -840,7 +840,7 @@ class _ActivityTab extends StatelessWidget {
           message: '本页当前仅展示静态活动与聊天样式，不代表真实用户动态。',
         ),
         const SizedBox(height: 14),
-        const WalletHeader(eyebrow: 'ZeroChain 预览页', title: '聊天'),
+        const WalletHeader(eyebrow: 'RabbitChain 预览页', title: '聊天'),
         const SizedBox(height: 20),
         const WalletSectionTitle(title: '热门'),
         const SizedBox(height: 12),
@@ -1064,7 +1064,7 @@ class _SettingsTab extends StatelessWidget {
                 _SelectionRow(
                   title: provider.accounts[index].name,
                   subtitle:
-                      'ZeroChain 账户 · ${walletShortAddress(provider.accounts[index].address)}',
+                      'RabbitChain 账户 · ${walletShortAddress(provider.accounts[index].address)}',
                   selected: provider.accounts[index].id == account.id,
                   onTap: () =>
                       provider.switchAccount(provider.accounts[index].id),

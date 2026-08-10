@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-import 'package:zero_wallet/core/constants/app_constants.dart';
-import 'package:zero_wallet/data/models/wallet_models.dart';
-import 'package:zero_wallet/presentation/pages/scan_pay_page.dart';
-import 'package:zero_wallet/presentation/providers/wallet_provider.dart';
+import 'package:rabbitchain_wallet/core/constants/app_constants.dart';
+import 'package:rabbitchain_wallet/data/models/wallet_models.dart';
+import 'package:rabbitchain_wallet/presentation/pages/scan_pay_page.dart';
+import 'package:rabbitchain_wallet/presentation/providers/wallet_provider.dart';
 
 class TestWalletProvider extends WalletProvider {
   TestWalletProvider({
@@ -16,7 +16,7 @@ class TestWalletProvider extends WalletProvider {
            WalletAccount(
              id: 'acct-1',
              name: 'qa-wallet',
-             address: 'ZER0x1111111111111111111111111111111111111111',
+             address: '0x1111111111111111111111111111111111111111',
              publicKey: '0x${'11' * 32}',
              privateKeyEncrypted: 'cipher',
              signatureScheme: SignatureScheme.ed25519,
@@ -106,7 +106,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Unsupported QR content, please scan an address'),
+        find.text('Unsupported QR content, please scan a 0x address'),
         findsOneWidget,
       );
     });
@@ -121,7 +121,7 @@ void main() {
       scanner.onDetect(
         BarcodeCapture(
           barcodes: const [
-            Barcode(rawValue: 'ZER0x1111111111111111111111111111111111111111'),
+            Barcode(rawValue: '0x1111111111111111111111111111111111111111'),
           ],
           width: 100,
           height: 100,

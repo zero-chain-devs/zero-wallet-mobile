@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zero_wallet/core/utils/crypto_utils.dart';
-import 'package:zero_wallet/core/utils/compute_tx.dart';
+import 'package:rabbitchain_wallet/core/utils/crypto_utils.dart';
+import 'package:rabbitchain_wallet/core/utils/compute_tx.dart';
 
 String repeatHex(String pair) => List<String>.filled(32, pair).join();
 
@@ -83,7 +83,7 @@ void main() {
       );
     });
 
-    test('buildUnsignedTransaction keeps ZER0x address owners normalized', () {
+    test('buildUnsignedTransaction keeps 0x address owners normalized', () {
       final unsigned = ComputeTx.buildUnsignedTransaction(<String, dynamic>{
         'domain_id': 0,
         'command': 'Mint',
@@ -95,7 +95,7 @@ void main() {
             'kind': 'Asset',
             'owner': <String, dynamic>{
               'type': 'Address',
-              'address': 'ZER0x9aea038CD4255BaaC26eAC5A74e58a07ED2f1975',
+              'address': '0x9aea038CD4255BaaC26eAC5A74e58a07ED2f1975',
             },
             'version': 1,
             'state': '0x',
@@ -107,7 +107,7 @@ void main() {
       final firstOutput = outputs.first as Map<String, dynamic>;
       final owner = firstOutput['owner'] as Map<String, dynamic>;
 
-      expect(owner['address'], 'ZER0x9aea038CD4255BaaC26eAC5A74e58a07ED2f1975');
+      expect(owner['address'], '0x9aea038CD4255BaaC26eAC5A74e58a07ED2f1975');
     });
 
     test(

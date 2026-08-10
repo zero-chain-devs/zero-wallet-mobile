@@ -37,9 +37,9 @@ class WalletProvider extends ChangeNotifier {
     isActive: true,
   );
   AccountBalance? _currentBalance;
-  String? _currentNonceHex;
+  String? _currentInputNonce;
   List<Transaction> _transactions = <Transaction>[];
-  ZeroChainRpcClient? _rpcClient;
+  RabbitChainRpcClient? _rpcClient;
   Map<String, String> _networkRpcOverrides = <String, String>{};
   bool _isLoading = false;
   String? _error;
@@ -49,7 +49,7 @@ class WalletProvider extends ChangeNotifier {
   WalletAccount? get currentAccount => _currentAccount;
   WalletNetwork get currentNetwork => _currentNetwork;
   AccountBalance? get currentBalance => _currentBalance;
-  String? get currentNonceHex => _currentNonceHex;
+  String? get currentInputNonce => _currentInputNonce;
   List<Transaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -68,7 +68,7 @@ class WalletProvider extends ChangeNotifier {
           NetworkConfig.local.id;
       _networkRpcOverrides = _loadRpcOverrides(prefs);
       _currentNetwork = _getNetworkById(networkId);
-      _rpcClient = ZeroChainRpcClient(network: _currentNetwork.toConfig());
+      _rpcClient = RabbitChainRpcClient(network: _currentNetwork.toConfig());
 
       final storedAccounts = await _secureStorage.read(
         key: AppConstants.storageKeyWalletAccounts,
@@ -97,7 +97,7 @@ class WalletProvider extends ChangeNotifier {
       } else {
         _currentAccount = null;
         _currentBalance = null;
-        _currentNonceHex = null;
+        _currentInputNonce = null;
       }
 
       _isInitialized = true;
@@ -127,10 +127,8 @@ class WalletProvider extends ChangeNotifier {
         );
       }
 
-      final derivedWallet = await CryptoUtils.createNativeWallet();
-      final normalizedPrivateKey = CryptoUtils.normalizeHex(
-        derivedWallet.privateKey,
-      );
+      final generatedWallet = await CryptoUtils.createMnemonicWallet();
+      final derivedWallet = generatedWallet.wallet;
 
       if (_accounts.any(
         (account) =>
@@ -156,20 +154,22 @@ class WalletProvider extends ChangeNotifier {
         signatureScheme: SignatureScheme.ed25519,
       );
 
-      _accounts = _markCurrent(<WalletAccount>[..._accounts, account], account.id);
+      _accounts = _markCurrent(<WalletAccount>[
+        ..._accounts,
+        account,
+      ], account.id);
       _currentAccount = _accounts.firstWhere((item) => item.id == account.id);
       await _persistAccounts();
       await refreshBalance();
       _error = null;
 
-        return CreateWalletResult(
-          success: true,
-          account: _currentAccount,
-          backupValue: normalizedPrivateKey,
-          backupTitle: '请备份 ed25519 私钥',
-          backupDescription:
-            '这个 ed25519 私钥可用于恢复你的 ZeroChain 账户。',
-        );
+      return CreateWalletResult(
+        success: true,
+        account: _currentAccount,
+        backupValue: generatedWallet.mnemonic,
+        backupTitle: '请备份助记词',
+        backupDescription: '这个助记词可用于恢复你的 RabbitChain 账户。',
+      );
     } catch (e) {
       _error = 'Failed to create wallet: $e';
       AppLogger.error('Create wallet failed', e);
@@ -198,14 +198,14 @@ class WalletProvider extends ChangeNotifier {
         );
       }
 
-      if (importMode != WalletImportMode.privateKey) {
-        return ImportWalletResult(
-          success: false,
-          error: 'Native wallet import requires private key',
-        );
+      if (importMode == WalletImportMode.mnemonic &&
+          !CryptoUtils.isValidMnemonic(data)) {
+        return ImportWalletResult(success: false, error: '助记词格式不正确');
       }
 
-      final derivedWallet = await CryptoUtils.deriveWalletFromPrivateKey(data);
+      final derivedWallet = importMode == WalletImportMode.privateKey
+          ? await CryptoUtils.deriveWalletFromPrivateKey(data)
+          : await CryptoUtils.deriveWalletFromMnemonic(data);
 
       if (_accounts.any(
         (account) =>
@@ -231,7 +231,10 @@ class WalletProvider extends ChangeNotifier {
         signatureScheme: SignatureScheme.ed25519,
       );
 
-      _accounts = _markCurrent(<WalletAccount>[..._accounts, account], account.id);
+      _accounts = _markCurrent(<WalletAccount>[
+        ..._accounts,
+        account,
+      ], account.id);
       _currentAccount = _accounts.firstWhere((item) => item.id == account.id);
       await _persistAccounts();
       await refreshBalance();
@@ -274,7 +277,7 @@ class WalletProvider extends ChangeNotifier {
   Future<void> switchNetwork(String networkId) async {
     try {
       _currentNetwork = _getNetworkById(networkId);
-      _rpcClient = ZeroChainRpcClient(network: _currentNetwork.toConfig());
+      _rpcClient = RabbitChainRpcClient(network: _currentNetwork.toConfig());
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(AppConstants.storageKeyCurrentNetwork, networkId);
@@ -306,7 +309,7 @@ class WalletProvider extends ChangeNotifier {
     );
 
     _currentNetwork = _getNetworkById(_currentNetwork.id);
-    _rpcClient = ZeroChainRpcClient(network: _currentNetwork.toConfig());
+    _rpcClient = RabbitChainRpcClient(network: _currentNetwork.toConfig());
     await refreshBalance();
     _error = null;
     notifyListeners();
@@ -322,7 +325,7 @@ class WalletProvider extends ChangeNotifier {
     );
 
     _currentNetwork = _getNetworkById(_currentNetwork.id);
-    _rpcClient = ZeroChainRpcClient(network: _currentNetwork.toConfig());
+    _rpcClient = RabbitChainRpcClient(network: _currentNetwork.toConfig());
     await refreshBalance();
     _error = null;
     notifyListeners();
@@ -333,22 +336,14 @@ class WalletProvider extends ChangeNotifier {
     required String jsonText,
     required String password,
   }) {
-    return _runComputeTx(
-      jsonText: jsonText,
-      password: password,
-      submit: false,
-    );
+    return _runComputeTx(jsonText: jsonText, password: password, submit: false);
   }
 
   Future<ComputeTxActionResult> submitComputeTx({
     required String jsonText,
     required String password,
   }) {
-    return _runComputeTx(
-      jsonText: jsonText,
-      password: password,
-      submit: true,
-    );
+    return _runComputeTx(jsonText: jsonText, password: password, submit: true);
   }
 
   Future<ComputeTxActionResult> _runComputeTx({
@@ -357,10 +352,7 @@ class WalletProvider extends ChangeNotifier {
     required bool submit,
   }) async {
     if (_currentAccount == null) {
-      return ComputeTxActionResult(
-        success: false,
-        error: 'No active account',
-      );
+      return ComputeTxActionResult(success: false, error: 'No active account');
     }
 
     if (_currentAccount!.signatureScheme != SignatureScheme.ed25519) {
@@ -403,7 +395,7 @@ class WalletProvider extends ChangeNotifier {
         publicKeyHex: _currentAccount!.publicKey,
       );
 
-      _rpcClient ??= ZeroChainRpcClient(network: _currentNetwork.toConfig());
+      _rpcClient ??= RabbitChainRpcClient(network: _currentNetwork.toConfig());
       final result = submit
           ? await _rpcClient!.submitComputeTx(signedTx)
           : await _rpcClient!.simulateComputeTx(signedTx);
@@ -427,15 +419,17 @@ class WalletProvider extends ChangeNotifier {
   Future<void> refreshBalance() async {
     if (_currentAccount == null) {
       _currentBalance = null;
-      _currentNonceHex = null;
+      _currentInputNonce = null;
       return;
     }
 
     try {
-      _rpcClient ??= ZeroChainRpcClient(network: _currentNetwork.toConfig());
-      final accountInfo = await _rpcClient!.getAccount(_currentAccount!.address);
+      _rpcClient ??= RabbitChainRpcClient(network: _currentNetwork.toConfig());
+      final accountInfo = await _rpcClient!.getAccount(
+        _currentAccount!.address,
+      );
       final rawBalance = accountInfo['balance']?.toString() ?? '0x0';
-      _currentNonceHex = accountInfo['nonce']?.toString() ?? '0x0';
+      _currentInputNonce = accountInfo['nonce']?.toString() ?? '0x0';
 
       _currentBalance = AccountBalance.fromRaw(
         address: _currentAccount!.address,
@@ -453,7 +447,7 @@ class WalletProvider extends ChangeNotifier {
         decimals: _currentNetwork.decimals,
         symbol: _currentNetwork.currencySymbol,
       );
-      _currentNonceHex = '0x0';
+      _currentInputNonce = '0x0';
       _error = 'Balance unavailable on ${_currentNetwork.name}: $e';
       notifyListeners();
     }
@@ -464,7 +458,10 @@ class WalletProvider extends ChangeNotifier {
       final account = _accounts.firstWhere(
         (item) => item.address.toLowerCase() == address.toLowerCase(),
       );
-      return await CryptoUtils.decryptData(account.privateKeyEncrypted, password);
+      return await CryptoUtils.decryptData(
+        account.privateKeyEncrypted,
+        password,
+      );
     } catch (e) {
       AppLogger.error('Get private key failed', e);
       return null;
@@ -478,7 +475,7 @@ class WalletProvider extends ChangeNotifier {
     _accounts = <WalletAccount>[];
     _currentAccount = null;
     _currentBalance = null;
-    _currentNonceHex = null;
+    _currentInputNonce = null;
     _transactions = <Transaction>[];
     _error = null;
     _isInitialized = false;
@@ -490,7 +487,10 @@ class WalletProvider extends ChangeNotifier {
     var config = NetworkConfig.getById(id) ?? NetworkConfig.local;
     final overrideRpc = _networkRpcOverrides[id];
     if (overrideRpc != null && overrideRpc.isNotEmpty) {
-      config = config.copyWith(rpcUrl: overrideRpc, wsUrl: _toWsUrl(overrideRpc));
+      config = config.copyWith(
+        rpcUrl: overrideRpc,
+        wsUrl: _toWsUrl(overrideRpc),
+      );
     }
     return WalletNetwork.fromConfig(config, isActive: true);
   }
@@ -555,7 +555,8 @@ class WalletProvider extends ChangeNotifier {
   ) {
     return accounts
         .map(
-          (account) => account.copyWith(isCurrent: account.id == currentAccountId),
+          (account) =>
+              account.copyWith(isCurrent: account.id == currentAccountId),
         )
         .toList();
   }
@@ -563,19 +564,29 @@ class WalletProvider extends ChangeNotifier {
   WalletAccount _normalizeAccountAddress(WalletAccount account) {
     try {
       final normalized = CryptoUtils.normalizeNativeAddress(account.address);
-      return account.copyWith(address: normalized, signatureScheme: SignatureScheme.ed25519);
+      return account.copyWith(
+        address: normalized,
+        signatureScheme: SignatureScheme.ed25519,
+      );
     } catch (_) {}
 
     try {
-      final normalized = CryptoUtils.formatNativeAddressFromPublicKey(account.publicKey);
-      return account.copyWith(address: normalized, signatureScheme: SignatureScheme.ed25519);
+      final normalized = CryptoUtils.formatNativeAddressFromPublicKey(
+        account.publicKey,
+      );
+      return account.copyWith(
+        address: normalized,
+        signatureScheme: SignatureScheme.ed25519,
+      );
     } catch (_) {
       return account.copyWith(signatureScheme: SignatureScheme.ed25519);
     }
   }
 
   Future<void> _persistAccounts() async {
-    final payload = jsonEncode(_accounts.map((account) => account.toJson()).toList());
+    final payload = jsonEncode(
+      _accounts.map((account) => account.toJson()).toList(),
+    );
     await _secureStorage.write(
       key: AppConstants.storageKeyWalletAccounts,
       value: payload,
@@ -598,7 +609,10 @@ Map<String, dynamic> bindComputeTxToNetwork(
   WalletNetwork network,
 ) {
   final txChainId = _readOptionalPositiveInt(input['chain_id'], 'chain_id');
-  final txNetworkId = _readOptionalPositiveInt(input['network_id'], 'network_id');
+  final txNetworkId = _readOptionalPositiveInt(
+    input['network_id'],
+    'network_id',
+  );
 
   if (txChainId != null && txChainId != network.chainId) {
     throw ArgumentError(
@@ -631,13 +645,15 @@ int? _readOptionalPositiveInt(dynamic value, String field) {
   };
 
   if (parsed == null || parsed <= 0) {
-    throw ArgumentError('Compute tx $field must be a positive integer when provided');
+    throw ArgumentError(
+      'Compute tx $field must be a positive integer when provided',
+    );
   }
 
   return parsed;
 }
 
-enum WalletImportMode { privateKey }
+enum WalletImportMode { privateKey, mnemonic }
 
 class CreateWalletResult {
   final bool success;

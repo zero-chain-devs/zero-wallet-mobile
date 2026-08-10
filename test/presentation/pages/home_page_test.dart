@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:zero_wallet/core/constants/app_constants.dart';
-import 'package:zero_wallet/data/models/wallet_models.dart';
-import 'package:zero_wallet/presentation/pages/home_page.dart';
-import 'package:zero_wallet/presentation/providers/wallet_provider.dart';
+import 'package:rabbitchain_wallet/core/constants/app_constants.dart';
+import 'package:rabbitchain_wallet/data/models/wallet_models.dart';
+import 'package:rabbitchain_wallet/presentation/pages/home_page.dart';
+import 'package:rabbitchain_wallet/presentation/providers/wallet_provider.dart';
 
 class TestWalletProvider extends WalletProvider {
   TestWalletProvider({

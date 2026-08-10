@@ -1,5 +1,5 @@
-name: zero_wallet
-description: "ZeroChain Wallet - A secure wallet for ZeroChain blockchain"
+name: rabbitchain_wallet
+description: "RabbitChain Wallet - A secure wallet for RabbitChain blockchain"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -23,7 +23,6 @@ dependencies:
 
   dio: ^5.4.0
   http: ^1.2.2
-  web3dart: ^2.7.3
 
   shared_preferences: ^2.2.2
   flutter_secure_storage: ^9.0.0

@@ -24,19 +24,19 @@ void main() async {
     ),
   );
 
-  runApp(const ZeroWalletApp());
+  runApp(const RabbitChainWalletApp());
 }
 
-/// Zero Wallet Application
-class ZeroWalletApp extends StatelessWidget {
-  const ZeroWalletApp({super.key});
+/// RabbitChain Wallet Application
+class RabbitChainWalletApp extends StatelessWidget {
+  const RabbitChainWalletApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => WalletProvider())],
       child: MaterialApp(
-        title: 'Zero Wallet',
+        title: 'RabbitChain Wallet',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,

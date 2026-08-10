@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:bip39/bip39.dart' as bip39;
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:pointycastle/digests/keccak.dart';
@@ -23,10 +24,17 @@ class DerivedWalletData {
   });
 }
 
+class MnemonicWalletData {
+  final String mnemonic;
+  final DerivedWalletData wallet;
+
+  const MnemonicWalletData({required this.mnemonic, required this.wallet});
+}
+
 class CryptoUtils {
   CryptoUtils._();
 
-  static const String nativeAddressPrefix = 'ZER0x';
+  static const String nativeAddressPrefix = '0x';
 
   static final Cipher _cipher = AesGcm.with256bits();
   static final Pbkdf2 _pbkdf2 = Pbkdf2.hmacSha256(
@@ -55,8 +63,45 @@ class CryptoUtils {
     );
   }
 
+  static Future<DerivedWalletData> deriveWalletFromMnemonic(
+    String mnemonic,
+  ) async {
+    final normalizedMnemonic = normalizeMnemonic(mnemonic);
+    if (!bip39.validateMnemonic(normalizedMnemonic)) {
+      throw ArgumentError('Invalid mnemonic');
+    }
+
+    final seed = bip39.mnemonicToSeed(normalizedMnemonic);
+    if (seed.length < 32) {
+      throw StateError('Mnemonic seed is too short');
+    }
+
+    return deriveWalletFromPrivateKey(
+      bytesToHex(Uint8List.fromList(seed.sublist(0, 32))),
+    );
+  }
+
   static Future<DerivedWalletData> createNativeWallet() async {
     return deriveWalletFromPrivateKey(bytesToHex(_randomBytes(32)));
+  }
+
+  static Future<MnemonicWalletData> createMnemonicWallet() async {
+    final mnemonic = bip39.generateMnemonic(strength: 128);
+    final wallet = await deriveWalletFromMnemonic(mnemonic);
+    return MnemonicWalletData(mnemonic: mnemonic, wallet: wallet);
+  }
+
+  static String normalizeMnemonic(String mnemonic) {
+    return mnemonic
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .join(' ');
+  }
+
+  static bool isValidMnemonic(String mnemonic) {
+    return bip39.validateMnemonic(normalizeMnemonic(mnemonic));
   }
 
   static Future<String> encryptData(String data, String password) async {
@@ -144,6 +189,28 @@ class CryptoUtils {
     return _formatNativeAddress(addressRaw);
   }
 
+  /// RabbitChain address checksum (matches chain-core `format_rabbit_address`).
+  ///
+  /// Takes a 42-char address string (`0x` + 40 hex digits), normalizes the
+  /// body to lowercase, applies the keccak256 nibble-based checksum, and
+  /// returns the canonical form.
+  ///
+  /// This is deliberately different from EIP-55 (which checksums the original
+  /// mixed-case address).  RabbitChain checksums the **lowercase** body.
+  static String rabbitChecksumAddress(String address) {
+    final normalized = normalizeNativeAddress(address);
+    return normalized;
+  }
+
+  /// Check whether [address] is a well-formed RabbitChain address
+  /// (`0x` prefix + 40 hex-digit body).  Does not verify checksum correctness.
+  static bool isValidRabbitAddress(String address) {
+    final trimmed = address.trim();
+    if (!trimmed.startsWith(nativeAddressPrefix)) return false;
+    final body = trimmed.substring(nativeAddressPrefix.length);
+    return RegExp(r'^[a-fA-F0-9]{40}$').hasMatch(body);
+  }
+
   static String normalizeNativeAddress(String address) {
     final trimmed = address.trim();
     if (trimmed.isEmpty) {
@@ -152,13 +219,7 @@ class CryptoUtils {
 
     final body = trimmed.startsWith(nativeAddressPrefix)
         ? trimmed.substring(nativeAddressPrefix.length)
-        : trimmed.startsWith('ZERO')
-            ? trimmed.substring(4)
-            : trimmed.startsWith('native1')
-                ? trimmed.substring(7)
-                : trimmed.startsWith('0x')
-                    ? trimmed.substring(2)
-                    : trimmed;
+        : trimmed;
 
     if (!RegExp(r'^[a-fA-F0-9]{40}$').hasMatch(body)) {
       throw ArgumentError('Native address body must be 20-byte hex');

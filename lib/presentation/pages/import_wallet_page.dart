@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/utils/crypto_utils.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/wallet_ui.dart';
 import 'wallet_dashboard_page.dart';
@@ -20,6 +21,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  WalletImportMode _importMode = WalletImportMode.privateKey;
 
   @override
   void dispose() {
@@ -51,7 +53,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ZeroChain Wallet',
+                              'RabbitChain Wallet',
                               style: TextStyle(
                                 color: Colors.white54,
                                 fontSize: 14,
@@ -95,10 +97,33 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                             children: [
                               WalletChoicePill(
                                 label: 'ed25519 私钥',
-                                active: true,
-                                onTap: () {},
+                                active:
+                                    _importMode == WalletImportMode.privateKey,
+                                onTap: () => setState(
+                                  () =>
+                                      _importMode = WalletImportMode.privateKey,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              WalletChoicePill(
+                                label: '助记词',
+                                active:
+                                    _importMode == WalletImportMode.mnemonic,
+                                onTap: () => setState(
+                                  () => _importMode = WalletImportMode.mnemonic,
+                                ),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _importMode == WalletImportMode.privateKey
+                              ? '支持 32 字节 hex 私钥，导入后会重新加密保存。'
+                              : '支持 BIP39 英文助记词，空格会自动整理为标准格式。',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.62),
+                            height: 1.45,
                           ),
                         ),
                       ],
@@ -132,10 +157,16 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           style: const TextStyle(color: Colors.white),
                           maxLines: 3,
                           decoration: WalletUi.inputDecoration(
-                            label: 'ed25519 私钥',
-                            hint: '输入 32 字节 hex 私钥',
-                            prefixIcon: const Icon(
-                              Icons.vpn_key_outlined,
+                            label: _importMode == WalletImportMode.privateKey
+                                ? 'ed25519 私钥'
+                                : '助记词',
+                            hint: _importMode == WalletImportMode.privateKey
+                                ? '输入 32 字节 hex 私钥'
+                                : '输入 12 / 15 / 18 / 21 / 24 个单词',
+                            prefixIcon: Icon(
+                              _importMode == WalletImportMode.privateKey
+                                  ? Icons.vpn_key_outlined
+                                  : Icons.menu_book_rounded,
                               color: Colors.white54,
                             ),
                             alignLabelWithHint: true,
@@ -143,12 +174,22 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                           validator: (value) {
                             final input = (value ?? '').trim();
                             if (input.isEmpty) {
-                              return '请输入 ed25519 私钥';
+                              return _importMode == WalletImportMode.privateKey
+                                  ? '请输入 ed25519 私钥'
+                                  : '请输入助记词';
+                            }
+                            if (_importMode == WalletImportMode.mnemonic) {
+                              if (!CryptoUtils.isValidMnemonic(input)) {
+                                return '助记词格式不正确';
+                              }
+                              return null;
                             }
                             final normalized = input.startsWith('0x')
                                 ? input.substring(2)
                                 : input;
-                            if (!RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(normalized)) {
+                            if (!RegExp(
+                              r'^[a-fA-F0-9]{64}$',
+                            ).hasMatch(normalized)) {
                               return '私钥必须是 32 字节 hex';
                             }
                             return null;
@@ -227,7 +268,9 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: provider.isLoading ? null : _importWallet,
+                            onPressed: provider.isLoading
+                                ? null
+                                : _importWallet,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: WalletUi.lime,
                               foregroundColor: Colors.black,
@@ -282,7 +325,7 @@ class _ImportWalletPageState extends State<ImportWalletPage> {
       name: _nameController.text.trim(),
       data: _dataController.text.trim(),
       password: _passwordController.text,
-      importMode: WalletImportMode.privateKey,
+      importMode: _importMode,
     );
 
     if (!mounted) {

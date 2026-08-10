@@ -119,7 +119,7 @@ class WalletAccount extends Equatable {
 
 /// Signature scheme enumeration
 enum SignatureScheme {
-  ed25519, // Native ZeroChain
+  ed25519, // Native RabbitChain
 }
 
 /// Account balance model
@@ -145,7 +145,7 @@ class AccountBalance extends Equatable {
     required String address,
     required String rawBalance,
     int decimals = 18,
-    String symbol = 'ZC',
+    String symbol = 'Rbit',
   }) {
     final balance =
         BigInt.tryParse(
@@ -212,11 +212,11 @@ class Transaction extends Equatable {
   final String to;
   final String value;
   final String valueFormatted;
-  final int? blockNumber;
+  final int? blockHeight;
   final DateTime timestamp;
   final TransactionStatus status;
-  final String? gasUsed;
-  final String? gasPrice;
+  final String? computeUnits;
+  final String? fee;
   final String? nonce;
   final String? input;
   final String? memo;
@@ -229,16 +229,16 @@ class Transaction extends Equatable {
     required this.to,
     required this.value,
     required this.valueFormatted,
-    this.blockNumber,
+    this.blockHeight,
     required this.timestamp,
     required this.status,
-    this.gasUsed,
-    this.gasPrice,
+    this.computeUnits,
+    this.fee,
     this.nonce,
     this.input,
     this.memo,
     this.decimals = 18,
-    this.symbol = 'ZC',
+    this.symbol = 'Rbit',
   });
 
   /// Convert to JSON
@@ -248,11 +248,11 @@ class Transaction extends Equatable {
     'to': to,
     'value': value,
     'valueFormatted': valueFormatted,
-    'blockNumber': blockNumber,
+    'blockHeight': blockHeight,
     'timestamp': timestamp.toIso8601String(),
     'status': status.index,
-    'gasUsed': gasUsed,
-    'gasPrice': gasPrice,
+    'computeUnits': computeUnits,
+    'fee': fee,
     'nonce': nonce,
     'input': input,
     'memo': memo,
@@ -267,16 +267,16 @@ class Transaction extends Equatable {
     to: json['to'] as String,
     value: json['value'] as String,
     valueFormatted: json['valueFormatted'] as String,
-    blockNumber: json['blockNumber'] as int?,
+    blockHeight: json['blockHeight'] as int?,
     timestamp: DateTime.parse(json['timestamp'] as String),
     status: TransactionStatus.values[json['status'] as int],
-    gasUsed: json['gasUsed'] as String?,
-    gasPrice: json['gasPrice'] as String?,
+    computeUnits: json['computeUnits'] as String?,
+    fee: json['fee'] as String?,
     nonce: json['nonce'] as String?,
     input: json['input'] as String?,
     memo: json['memo'] as String?,
     decimals: json['decimals'] as int? ?? 18,
-    symbol: json['symbol'] as String? ?? 'ZC',
+    symbol: json['symbol'] as String? ?? 'Rbit',
   );
 
   /// Check if transaction is incoming
@@ -296,11 +296,11 @@ class Transaction extends Equatable {
     to,
     value,
     valueFormatted,
-    blockNumber,
+    blockHeight,
     timestamp,
     status,
-    gasUsed,
-    gasPrice,
+    computeUnits,
+    fee,
     nonce,
     input,
     memo,

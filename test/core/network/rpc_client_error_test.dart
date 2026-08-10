@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zero_wallet/core/network/rpc_client.dart';
+import 'package:rabbitchain_wallet/core/network/rpc_client.dart';
 
 void main() {
   group('mapRpcErrorMessage', () {
     test('keeps default message for native rpc errors', () {
       final message = mapRpcErrorMessage(
         code: -32000,
-        method: 'zero_submitComputeTx',
+        method: 'rabbit_submitComputeTx',
         defaultMessage: 'Native compute submission failed',
       );
 
@@ -16,7 +16,7 @@ void main() {
     test('keeps default message for unknown methods', () {
       final message = mapRpcErrorMessage(
         code: -32601,
-        method: 'zero_getAccount',
+        method: 'rabbit_getAccount',
         defaultMessage: 'Method not found',
       );
 

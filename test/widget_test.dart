@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:zero_wallet/core/theme/app_theme.dart';
-import 'package:zero_wallet/presentation/providers/wallet_provider.dart';
-import 'package:zero_wallet/presentation/pages/home_page.dart';
+import 'package:rabbitchain_wallet/core/theme/app_theme.dart';
+import 'package:rabbitchain_wallet/presentation/providers/wallet_provider.dart';
+import 'package:rabbitchain_wallet/presentation/pages/home_page.dart';
 
 void main() {
   testWidgets('Wallet app loads successfully', (WidgetTester tester) async {
@@ -12,7 +12,7 @@ void main() {
       MultiProvider(
         providers: [ChangeNotifierProvider(create: (_) => WalletProvider())],
         child: MaterialApp(
-          title: 'Zero Wallet',
+          title: 'RabbitChain Wallet',
           theme: AppTheme.lightTheme,
           home: const HomePage(),
         ),

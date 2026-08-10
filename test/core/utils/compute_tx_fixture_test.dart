@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zero_wallet/core/utils/compute_tx.dart';
+import 'package:rabbitchain_wallet/core/utils/compute_tx.dart';
 
 Map<String, dynamic> loadFixture(String name) {
   final file = File(
-    '../zero-chain/fixtures/compute_json/$name.json',
+    '../Rabbit-Chain-node/fixtures/compute_json/$name.json',
   );
   return jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
 }

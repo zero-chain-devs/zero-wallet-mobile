@@ -1,4 +1,4 @@
-package com.zerocchain.zero_wallet
+package io.rabbitchain.wallet
 
 import io.flutter.embedding.android.FlutterActivity
 

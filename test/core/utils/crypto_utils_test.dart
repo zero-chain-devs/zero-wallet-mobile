@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zero_wallet/core/utils/crypto_utils.dart';
-import 'package:zero_wallet/data/models/wallet_models.dart';
+import 'package:rabbitchain_wallet/core/utils/crypto_utils.dart';
+import 'package:rabbitchain_wallet/data/models/wallet_models.dart';
 
 String repeatHex(String pair) => List<String>.filled(32, pair).join();
 
@@ -9,9 +9,11 @@ void main() {
     test('normalizes native addresses from supported prefixes', () {
       const body = '1111111111111111111111111111111111111111';
 
-      final expected = CryptoUtils.normalizeNativeAddress('ZER0x$body');
-      expect(CryptoUtils.normalizeNativeAddress('0x$body'), expected);
-      expect(CryptoUtils.normalizeNativeAddress('native1$body'), expected);
+      final expected = CryptoUtils.normalizeNativeAddress('0x$body');
+      expect(
+        () => CryptoUtils.normalizeNativeAddress('BAD0x$body'),
+        throwsA(isA<ArgumentError>()),
+      );
       expect(expected, startsWith(CryptoUtils.nativeAddressPrefix));
     });
 
@@ -37,9 +39,39 @@ void main() {
         expect(first.privateKey, privateKey);
         expect(first.publicKey, second.publicKey);
         expect(first.address, second.address);
-        expect(first.address, startsWith('ZER0x'));
+        expect(first.address, startsWith('0x'));
         expect(first.signatureScheme, SignatureScheme.ed25519);
       },
     );
+
+    test(
+      'generates and derives deterministic wallet data from a mnemonic',
+      () async {
+        const mnemonic =
+            'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+
+        expect(CryptoUtils.isValidMnemonic(mnemonic), isTrue);
+
+        final first = await CryptoUtils.deriveWalletFromMnemonic(mnemonic);
+        final second = await CryptoUtils.deriveWalletFromMnemonic(
+          '  Abandon   abandon abandon   abandon abandon abandon abandon abandon abandon abandon abandon ABOUT  ',
+        );
+
+        expect(first.privateKey, second.privateKey);
+        expect(first.publicKey, second.publicKey);
+        expect(first.address, second.address);
+        expect(first.address, startsWith('0x'));
+        expect(first.signatureScheme, SignatureScheme.ed25519);
+      },
+    );
+
+    test('creates a valid mnemonic wallet backup', () async {
+      final generated = await CryptoUtils.createMnemonicWallet();
+
+      expect(CryptoUtils.isValidMnemonic(generated.mnemonic), isTrue);
+      expect(generated.wallet.privateKey, hasLength(64));
+      expect(generated.wallet.address, startsWith('0x'));
+      expect(generated.wallet.signatureScheme, SignatureScheme.ed25519);
+    });
   });
 }

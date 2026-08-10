@@ -1,18 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zero_wallet/data/models/wallet_models.dart';
+import 'package:rabbitchain_wallet/data/models/wallet_models.dart';
 
 void main() {
   group('WalletAccount.create', () {
     test('generates UUID ids for new accounts', () {
       final first = WalletAccount.create(
         name: 'first',
-        address: 'ZER0x1111111111111111111111111111111111111111',
+        address: '0x1111111111111111111111111111111111111111',
         publicKey: 'a' * 64,
         privateKeyEncrypted: 'enc-1',
       );
       final second = WalletAccount.create(
         name: 'second',
-        address: 'ZER0x2222222222222222222222222222222222222222',
+        address: '0x2222222222222222222222222222222222222222',
         publicKey: 'b' * 64,
         privateKeyEncrypted: 'enc-2',
       );

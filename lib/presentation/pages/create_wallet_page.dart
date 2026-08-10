@@ -50,7 +50,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ZeroChain Wallet',
+                              'RabbitChain Wallet',
                               style: TextStyle(
                                 color: Colors.white54,
                                 fontSize: 14,
@@ -102,7 +102,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          '账户通过随机 ed25519 私钥生成，后续统一签名 compute 交易。',
+                          '账户通过随机助记词生成，再派生 ed25519 私钥，后续统一签名 compute 交易。',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.62),
                             height: 1.5,
@@ -207,7 +207,9 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: provider.isLoading ? null : _createWallet,
+                            onPressed: provider.isLoading
+                                ? null
+                                : _createWallet,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: WalletUi.lime,
                               foregroundColor: Colors.black,

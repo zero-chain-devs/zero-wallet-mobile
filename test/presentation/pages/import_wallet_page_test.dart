@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:zero_wallet/core/constants/app_constants.dart';
-import 'package:zero_wallet/data/models/wallet_models.dart';
-import 'package:zero_wallet/presentation/pages/import_wallet_page.dart';
-import 'package:zero_wallet/presentation/providers/wallet_provider.dart';
+import 'package:rabbitchain_wallet/core/constants/app_constants.dart';
+import 'package:rabbitchain_wallet/data/models/wallet_models.dart';
+import 'package:rabbitchain_wallet/presentation/pages/import_wallet_page.dart';
+import 'package:rabbitchain_wallet/presentation/providers/wallet_provider.dart';
 
 class TestWalletProvider extends WalletProvider {
   TestWalletProvider({
@@ -13,18 +13,20 @@ class TestWalletProvider extends WalletProvider {
     WalletNetwork? currentNetwork,
     bool isLoading = false,
     String? error,
-  }) : _currentAccount = currentAccount ??
+  }) : _currentAccount =
+           currentAccount ??
            WalletAccount(
              id: 'acct-1',
              name: 'qa-wallet',
-             address: 'ZER0x2222222222222222222222222222222222222222',
+             address: '0x2222222222222222222222222222222222222222',
              publicKey: '0x${'22' * 32}',
              privateKeyEncrypted: 'cipher',
              signatureScheme: SignatureScheme.ed25519,
              createdAt: DateTime.utc(2026, 3, 9),
              isCurrent: true,
            ),
-       _currentNetwork = currentNetwork ??
+       _currentNetwork =
+           currentNetwork ??
            WalletNetwork.fromConfig(NetworkConfig.local, isActive: true),
        _isLoading = isLoading,
        _error = error;
@@ -85,15 +87,15 @@ void main() {
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      switch (call.method) {
-        case 'Clipboard.setData':
-        case 'SystemSound.play':
-        case 'SystemChrome.setApplicationSwitcherDescription':
-        case 'SystemChrome.setSystemUIOverlayStyle':
+          switch (call.method) {
+            case 'Clipboard.setData':
+            case 'SystemSound.play':
+            case 'SystemChrome.setApplicationSwitcherDescription':
+            case 'SystemChrome.setSystemUIOverlayStyle':
+              return null;
+          }
           return null;
-      }
-      return null;
-    });
+        });
   });
 
   tearDown(() {
@@ -161,6 +163,46 @@ void main() {
       expect(provider.lastData, '0x${'a' * 64}');
       expect(provider.lastPassword, 'StrongPass123');
       expect(provider.lastImportMode, WalletImportMode.privateKey);
+      expect(find.text('钱包导入成功'), findsOneWidget);
+      expect(find.text('发送'), findsOneWidget);
+      expect(find.text('接收'), findsOneWidget);
+    });
+
+    testWidgets('imports wallet from mnemonic mode', (
+      WidgetTester tester,
+    ) async {
+      final provider = TestWalletProvider();
+
+      tester.view.physicalSize = const Size(430, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(_wrap(provider));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('助记词'));
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      expect(fields, findsNWidgets(4));
+
+      const mnemonic =
+          'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+      await tester.enterText(fields.at(0), 'mnemonic-wallet');
+      await tester.enterText(fields.at(1), mnemonic);
+      await tester.enterText(fields.at(2), 'StrongPass123');
+      await tester.enterText(fields.at(3), 'StrongPass123');
+      await tester.tap(find.widgetWithText(ElevatedButton, '导入钱包'));
+      await tester.pumpAndSettle();
+
+      expect(provider.importCalls, 1);
+      expect(provider.lastName, 'mnemonic-wallet');
+      expect(provider.lastData, mnemonic);
+      expect(provider.lastPassword, 'StrongPass123');
+      expect(provider.lastImportMode, WalletImportMode.mnemonic);
       expect(find.text('钱包导入成功'), findsOneWidget);
       expect(find.text('发送'), findsOneWidget);
       expect(find.text('接收'), findsOneWidget);

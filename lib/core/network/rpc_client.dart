@@ -3,13 +3,13 @@ import 'package:dio/dio.dart';
 import '../constants/app_constants.dart';
 import '../utils/logger.dart';
 
-/// ZeroChain RPC client for blockchain interactions
-class ZeroChainRpcClient {
+/// RabbitChain RPC client for blockchain interactions
+class RabbitChainRpcClient {
   final Dio _dio;
   final NetworkConfig network;
   int _requestId = 0;
 
-  ZeroChainRpcClient({required this.network})
+  RabbitChainRpcClient({required this.network})
       : _dio = Dio(
           BaseOptions(
             baseUrl: network.rpcUrl,
@@ -71,27 +71,27 @@ class ZeroChainRpcClient {
 
   Future<Map<String, dynamic>> getAccount(String address) async {
     final response = await _request(
-      method: 'zero_getAccount',
+      method: 'rabbit_getAccount',
       params: [address],
     );
     return response['result'] as Map<String, dynamic>;
   }
 
   Future<dynamic> simulateComputeTx(Map<String, dynamic> tx) {
-    return request('zero_simulateComputeTx', [tx]);
+    return request('rabbit_simulateComputeTx', [tx]);
   }
 
   Future<dynamic> submitComputeTx(Map<String, dynamic> tx) {
-    return request('zero_submitComputeTx', [tx]);
+    return request('rabbit_submitComputeTx', [tx]);
   }
 
   Future<dynamic> getComputeTxResult(String txId) {
-    return request('zero_getComputeTxResult', [txId]);
+    return request('rabbit_getComputeTxResult', [txId]);
   }
 
   Future<Map<String, dynamic>?> getLatestBlock() async {
     final response = await _request(
-      method: 'zero_getLatestBlock',
+      method: 'rabbit_getLatestBlock',
       params: const <dynamic>[],
     );
     return response['result'] as Map<String, dynamic>?;

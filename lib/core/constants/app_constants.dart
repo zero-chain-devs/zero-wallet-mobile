@@ -2,11 +2,11 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'Zero Wallet';
+  static const String appName = 'RabbitChain Wallet';
   static const String appVersion = '1.0.0';
   static const int defaultDecimals = 18;
-  static const String nativeTokenSymbol = 'ZC';
-  static const String nativeTokenName = 'ZeroChain';
+  static const String nativeTokenSymbol = 'Rbit';
+  static const String nativeTokenName = 'RabbitChain';
   static const int maxMemoLength = 256;
   static const int sessionTimeoutSeconds = 300;
   static const int biometricTimeoutSeconds = 30;
@@ -73,7 +73,7 @@ class NetworkConfig {
     networkId: 31337,
     explorerUrl: '',
     isTestnet: true,
-    currencySymbol: 'ZC',
+    currencySymbol: 'Rbit',
     decimals: 18,
   );
 
@@ -88,7 +88,7 @@ class NetworkConfig {
     explorerUrl: '',
     faucetUrl: '',
     isTestnet: true,
-    currencySymbol: 'ZC',
+    currencySymbol: 'Rbit',
     decimals: 18,
   );
 
@@ -103,7 +103,7 @@ class NetworkConfig {
     explorerUrl: '',
     faucetUrl: '',
     isTestnet: true,
-    currencySymbol: 'ZC',
+    currencySymbol: 'Rbit',
     decimals: 18,
   );
 
@@ -111,13 +111,13 @@ class NetworkConfig {
     id: 'mainnet',
     name: 'Mainnet',
     type: NetworkType.mainnet,
-    rpcUrl: 'http://127.0.0.1:8545',
-    wsUrl: 'ws://127.0.0.1:8546',
+    rpcUrl: 'https://rpc.rabbitchain.wedevs.org',
+    wsUrl: 'wss://wss.rabbitchain.wedevs.org/p2p',
     chainId: 10086,
     networkId: 10086,
     explorerUrl: '',
     isTestnet: false,
-    currencySymbol: 'ZC',
+    currencySymbol: 'Rbit',
     decimals: 18,
   );
 

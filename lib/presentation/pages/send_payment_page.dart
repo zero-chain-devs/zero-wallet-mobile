@@ -64,7 +64,7 @@ class _SendPaymentPageState extends State<SendPaymentPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              account?.name ?? 'ZeroChain Wallet',
+                              account?.name ?? 'RabbitChain Wallet',
                               style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 14,
